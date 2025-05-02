@@ -113,10 +113,6 @@
 #define AR0234_TESTP_BLUE_DEFAULT	0
 #define AR0234_TESTP_GREENB_DEFAULT	0
 
-/* Embedded metadata stream structure */
-#define AR0234_EMBEDDED_LINE_WIDTH 16384
-#define AR0234_NUM_EMBEDDED_LINES 1
-
 enum pad_types {
 	IMAGE_PAD,
 	METADATA_PAD,
@@ -130,6 +126,12 @@ enum pad_types {
 #define AR0234_PIXEL_ARRAY_TOP		10U
 #define AR0234_PIXEL_ARRAY_WIDTH	1920U
 #define AR0234_PIXEL_ARRAY_HEIGHT	1200U
+
+/* Embedded metadata stream structure */
+#define AR0234_MD_PADDING_BYTES (AR0234_PIXEL_ARRAY_WIDTH / 4)
+#define AR0234_EMBEDDED_LINE_WIDTH
+(AR0234_PIXEL_ARRAY_WIDTH + AR0234_MD_PADDING_BYTES)
+#define AR0234_NUM_EMBEDDED_LINES 2
 
 struct ar0234_reg {
 	u16 address;
