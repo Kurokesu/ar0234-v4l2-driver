@@ -113,10 +113,6 @@
 #define AR0234_TESTP_BLUE_DEFAULT	0
 #define AR0234_TESTP_GREENB_DEFAULT	0
 
-/* Embedded metadata stream structure */
-#define AR0234_EMBEDDED_LINE_WIDTH 16384
-#define AR0234_NUM_EMBEDDED_LINES 1
-
 enum pad_types {
 	IMAGE_PAD,
 	METADATA_PAD,
@@ -130,6 +126,12 @@ enum pad_types {
 #define AR0234_PIXEL_ARRAY_TOP		10U
 #define AR0234_PIXEL_ARRAY_WIDTH	1920U
 #define AR0234_PIXEL_ARRAY_HEIGHT	1200U
+
+/* Embedded metadata stream structure */
+#define AR0234_MD_PADDING_BYTES (AR0234_PIXEL_ARRAY_WIDTH / 4)
+#define AR0234_EMBEDDED_LINE_WIDTH
+(AR0234_PIXEL_ARRAY_WIDTH + AR0234_MD_PADDING_BYTES)
+#define AR0234_NUM_EMBEDDED_LINES 2
 
 struct ar0234_reg {
 	u16 address;
@@ -215,6 +217,7 @@ static const struct ar0234_reg common_init[] = {
 	{ 0x3ECC, 0x0D42 },	// RESERVED_MFR_3ECC
 	{ 0x30F0, 0x2283 },	// RESERVED_MFR_30F0
 	{ 0x3102, 0x5000 },	// AE_LUMA_TARGET_REG
+	{ 0x30B4, 0x0011 }, // TEMPSENS_CTRL_REG
 	{ 0x30BA, 0x7626 },	// RESERVED_MFR_30BA
 	{ 0x301A, 0x205C },	// RESET_REGISTER
 	{ 0x3064, 0x1982 },	// EMBEDDED DATA

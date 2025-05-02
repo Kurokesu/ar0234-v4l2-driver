@@ -49,6 +49,9 @@
 				vdig-supply = <&cam_dummy_reg>;	/* 1.8v */
 				vddl-supply = <&cam_dummy_reg>;	/* 1.2v */
 
+				rotation = <180>;
+				orientation = <2>;
+
 				port {
 					cam_endpoint: endpoint {
 						remote-endpoint = <&csi1_ep>;
@@ -92,10 +95,10 @@
 		orientation = <&cam_node>,"orientation:0";
 		media-controller = <0>,"!102";
 		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
-		       <&csi_frag>, "target:0=",<&csi0>,
-		       <&clk_frag>, "target:0=",<&cam0_clk>,
-		       <&cam_node>, "clocks:0=",<&cam0_clk>,
-		       <&cam_node>, "vana-supply:0=",<&cam0_reg>;
+			   <&csi_frag>, "target:0=",<&csi0>,
+			   <&clk_frag>, "target:0=",<&cam0_clk>,
+			   <&cam_node>, "clocks:0=",<&cam0_clk>,
+			   <&cam_node>, "vana-supply:0=",<&cam0_reg>;
 	};
 };
 
