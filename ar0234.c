@@ -217,6 +217,7 @@ static const struct ar0234_reg common_init[] = {
 	{ 0x3ECC, 0x0D42 },	// RESERVED_MFR_3ECC
 	{ 0x30F0, 0x2283 },	// RESERVED_MFR_30F0
 	{ 0x3102, 0x5000 },	// AE_LUMA_TARGET_REG
+	{ 0x30B4, 0x0011 }, // TEMPSENS_CTRL_REG
 	{ 0x30BA, 0x7626 },	// RESERVED_MFR_30BA
 	{ 0x301A, 0x205C },	// RESET_REGISTER
 	{ 0x3064, 0x1982 },	// EMBEDDED DATA
