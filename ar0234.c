@@ -128,9 +128,10 @@ enum pad_types {
 #define AR0234_PIXEL_ARRAY_HEIGHT	1200U
 
 /* Embedded metadata stream structure */
+// Padding every 4 bytes
 #define AR0234_MD_PADDING_BYTES (AR0234_PIXEL_ARRAY_WIDTH / 4)
-#define AR0234_EMBEDDED_LINE_WIDTH
-(AR0234_PIXEL_ARRAY_WIDTH + AR0234_MD_PADDING_BYTES)
+#define AR0234_EMBEDDED_LINE_WIDTH                                             \
+  (AR0234_PIXEL_ARRAY_WIDTH + AR0234_MD_PADDING_BYTES)
 #define AR0234_NUM_EMBEDDED_LINES 2
 
 struct ar0234_reg {
