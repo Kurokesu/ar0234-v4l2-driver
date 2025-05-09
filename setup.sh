@@ -11,6 +11,7 @@ sudo dkms remove -m ${DRIVER_NAME} -v ${DRIVER_VERSION} --all
 sudo mkdir -p /usr/src/${DRIVER_NAME}-${DRIVER_VERSION}
 
 sudo cp -r $(pwd)/* /usr/src/${DRIVER_NAME}-${DRIVER_VERSION}
+chmod +x /usr/src/${DRIVER_NAME}-${DRIVER_VERSION}/post_install
 
 sudo dkms add -m ${DRIVER_NAME} -v ${DRIVER_VERSION}
 sudo dkms build -m ${DRIVER_NAME} -v ${DRIVER_VERSION}
