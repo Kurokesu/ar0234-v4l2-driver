@@ -115,6 +115,9 @@ Finally, run the following command to build and install `libcamera`:
 sudo ninja -C build install
 ```
 
+> [!TIP]
+> On devices with 1GB of memory or less, the build may exceed available memory. Append the `-j 1` flag to meson commands to limit the build to a single process.
+
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
 
