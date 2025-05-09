@@ -106,7 +106,7 @@ cd libcamera/
 #### Configure the Build Environment
 Run `meson` to configure the build environment:
 ```bash
-meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=true -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
+meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
 
 #### Build and Install libcamera
@@ -134,8 +134,14 @@ Run the following `meson` command to configure the build:
 meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
 ```
 
-#### Build and Install rpicam-apps
-Run the following command to build and install `rpicam-apps`:
+#### Build rpicam-apps
+Run the following command to build:
+```bash
+meson compile -C build
+```
+
+#### Install rpicam-apps
+Run the following command to install `rpicam-apps`:
 ```bash
 sudo meson install -C build
 ```
