@@ -99,6 +99,7 @@ sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 Download a local copy of Kurokesu's fork of `libcamera` with `ar0234` modifications from GitHub:
 
 ```bash
+cd ~
 git clone --single-branch --branch ar0234 https://github.com/Kurokesu/libcamera.git
 cd libcamera/
 ```
