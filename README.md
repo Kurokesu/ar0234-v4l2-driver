@@ -122,7 +122,7 @@ sudo ninja -C build install
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
 
-#### Install libcamera Dependencies
+#### Install rpicam-apps Dependencies
 ```bash
 sudo apt install libavcodec-dev libavdevice-dev -y
 ```
