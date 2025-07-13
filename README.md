@@ -125,6 +125,7 @@ sudo ninja -C build install
 #### Clone the rpicam-apps Repository
 Download a local copy of Raspberry Pi’s `rpicam-apps` GitHub repository:
 ```bash
+cd ~
 git clone https://github.com/raspberrypi/rpicam-apps.git
 cd rpicam-apps
 ```
