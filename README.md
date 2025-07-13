@@ -122,6 +122,11 @@ sudo ninja -C build install
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
 
+#### Install libcamera Dependencies
+```bash
+sudo apt install libavcodec-dev libavdevice-dev -y
+```
+
 #### Clone the rpicam-apps Repository
 Download a local copy of Raspberry Pi’s `rpicam-apps` GitHub repository:
 ```bash
