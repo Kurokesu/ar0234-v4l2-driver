@@ -174,6 +174,11 @@ libcamera build: v0.4.0
 ```
 
 ### Verify that ar0234 is Being Detected Correctly
+Do not forget to reboot!
+```bash
+sudo reboot
+```
+
 Run the following command to list available cameras:
 ```bash
 rpicam-hello --list-cameras
