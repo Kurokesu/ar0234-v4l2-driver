@@ -1155,6 +1155,8 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 						AR0234_PIXEL_RATE,
 						AR0234_PIXEL_RATE, 1,
 						AR0234_PIXEL_RATE);
+	if (ar0234->pixel_rate)
+		ar0234->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
 	/* Initial vblank/hblank/exposure parameters based on current mode */
 	ar0234->vblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
