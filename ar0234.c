@@ -328,17 +328,27 @@ static const struct ar0234_mode supported_modes[] = {
 	},
 };
 
+enum ar0234_lane_mode_id {
+	AR0234_LANE_MODE_ID_2 = 0,
+	AR0234_LANE_MODE_ID_4,
+	AR0234_LANE_MODE_ID_AMOUNT,
+};
+
+struct ar0234_hw_config {
+	struct clk *xclk; /* system clock to AR0234 */
+	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
+	struct gpio_desc *reset_gpio;
+	unsigned int num_data_lanes;
+	enum ar0234_lane_mode_id lane_mode;
+};
+
 struct ar0234 {
+	struct device *dev;
 	struct v4l2_subdev sd;
 	struct media_pad pad[NUM_PADS];
+	struct ar0234_hw_config hw_config;
 
 	struct v4l2_mbus_framefmt fmt;
-
-	struct clk *xclk; /* system clock to AR0234 */
-	u32 xclk_freq;
-
-	struct gpio_desc *reset_gpio;
-	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
 
 	bool monochrome;
 
@@ -1018,27 +1028,28 @@ static int ar0234_power_on(struct device *dev)
 	struct ar0234 *ar0234 = to_ar0234(sd);
 	int ret;
 
-	ret = regulator_bulk_enable(AR0234_NUM_SUPPLIES, ar0234->supplies);
+	ret = regulator_bulk_enable(AR0234_NUM_SUPPLIES,
+				    ar0234->hw_config.supplies);
 	if (ret) {
 		dev_err(&client->dev, "%s: failed to enable regulators\n",
 			__func__);
 		return ret;
 	}
 
-	ret = clk_prepare_enable(ar0234->xclk);
+	ret = clk_prepare_enable(ar0234->hw_config.xclk);
 	if (ret) {
 		dev_err(&client->dev, "%s: failed to enable clock\n", __func__);
 		goto reg_off;
 	}
 
-	gpiod_set_value_cansleep(ar0234->reset_gpio, 1);
+	gpiod_set_value_cansleep(ar0234->hw_config.reset_gpio, 1);
 	usleep_range(AR0234_XCLR_MIN_DELAY_US,
 		     AR0234_XCLR_MIN_DELAY_US + AR0234_XCLR_DELAY_RANGE_US);
 
 	return 0;
 
 reg_off:
-	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->supplies);
+	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
 
 	return ret;
 }
@@ -1049,23 +1060,22 @@ static int ar0234_power_off(struct device *dev)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct ar0234 *ar0234 = to_ar0234(sd);
 
-	gpiod_set_value_cansleep(ar0234->reset_gpio, 0);
-	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->supplies);
-	clk_disable_unprepare(ar0234->xclk);
+	gpiod_set_value_cansleep(ar0234->hw_config.reset_gpio, 0);
+	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
+	clk_disable_unprepare(ar0234->hw_config.xclk);
 
 	return 0;
 }
 
 static int ar0234_get_regulators(struct ar0234 *ar0234)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	unsigned int i;
 
 	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
-		ar0234->supplies[i].supply = ar0234_supply_name[i];
+		ar0234->hw_config.supplies[i].supply = ar0234_supply_name[i];
 
-	return devm_regulator_bulk_get(&client->dev, AR0234_NUM_SUPPLIES,
-				       ar0234->supplies);
+	return devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
+				       ar0234->hw_config.supplies);
 }
 
 /* Verify chip ID */
@@ -1238,39 +1248,54 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 	mutex_destroy(&ar0234->mutex);
 }
 
-static int ar0234_check_hwcfg(struct device *dev)
+static int ar0234_parse_hwcfg(struct ar0234 *ar0234)
 {
 	struct fwnode_handle *endpoint;
-	struct v4l2_fwnode_endpoint ep_cfg = { .bus_type =
-						       V4L2_MBUS_CSI2_DPHY };
+	struct v4l2_fwnode_endpoint ep_cfg = {
+		.bus_type = V4L2_MBUS_CSI2_DPHY,
+	};
+	struct ar0234_hw_config *hw_config = &ar0234->hw_config;
 	int ret = -EINVAL;
 
-	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
+	endpoint =
+		fwnode_graph_get_next_endpoint(dev_fwnode(ar0234->dev), NULL);
 	if (!endpoint) {
-		dev_err(dev, "endpoint node not found\n");
+		dev_err(ar0234->dev, "endpoint node not found\n");
 		return -EINVAL;
 	}
 
 	if (v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg)) {
-		dev_err(dev, "could not parse endpoint\n");
+		dev_err(ar0234->dev, "could not parse endpoint\n");
 		goto error_out;
 	}
 
 	/* Check the number of MIPI CSI2 data lanes */
-	if (ep_cfg.bus.mipi_csi2.num_data_lanes != 2) {
-		dev_err(dev, "only 2 data lanes are currently supported\n");
+	switch (ep_cfg.bus.mipi_csi2.num_data_lanes) {
+	case 2:
+		hw_config->lane_mode = AR0234_LANE_MODE_ID_2;
+		break;
+	case 4:
+		hw_config->lane_mode = AR0234_LANE_MODE_ID_4;
+		break;
+	default:
+		ret = dev_err_probe(ar0234->dev, -EINVAL,
+				    "invalid number of CSI2 data lanes %d\n",
+				    ep_cfg.bus.mipi_csi2.num_data_lanes);
 		goto error_out;
 	}
 
+	hw_config->num_data_lanes = ep_cfg.bus.mipi_csi2.num_data_lanes;
+
 	/* Check the link frequency set in device tree */
 	if (!ep_cfg.nr_of_link_frequencies) {
-		dev_err(dev, "link-frequency property not found in DT\n");
+		dev_err(ar0234->dev,
+			"link-frequency property not found in DT\n");
 		goto error_out;
 	}
 
 	if (ep_cfg.nr_of_link_frequencies != 1 ||
 	    ep_cfg.link_frequencies[0] != AR0234_DEFAULT_LINK_FREQ) {
-		dev_err(dev, "Link frequency not supported: %lld\n",
+		dev_err(ar0234->dev, "Link frequency not supported: %lld\n",
 			ep_cfg.link_frequencies[0]);
 		goto error_out;
 	}
@@ -1286,51 +1311,53 @@ error_out:
 
 static int ar0234_probe(struct i2c_client *client)
 {
-	struct device *dev = &client->dev;
 	struct ar0234 *ar0234;
+	unsigned int xclk_freq;
 	int ret;
 
 	ar0234 = devm_kzalloc(&client->dev, sizeof(*ar0234), GFP_KERNEL);
 	if (!ar0234)
 		return -ENOMEM;
 
+	ar0234->dev = &client->dev;
+
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	if (ar0234_check_hwcfg(dev))
+	if (ar0234_parse_hwcfg(ar0234))
 		return -EINVAL;
 
 	/* Get system clock (xclk) */
-	ar0234->xclk = devm_clk_get(dev, NULL);
-	if (IS_ERR(ar0234->xclk)) {
-		if (PTR_ERR(ar0234->xclk) != -EPROBE_DEFER)
-			dev_err(dev, "failed to get xclk %ld\n",
-				PTR_ERR(ar0234->xclk));
-		return PTR_ERR(ar0234->xclk);
+	ar0234->hw_config.xclk = devm_clk_get(ar0234->dev, NULL);
+	if (IS_ERR(ar0234->hw_config.xclk)) {
+		if (PTR_ERR(ar0234->hw_config.xclk) != -EPROBE_DEFER)
+			dev_err(ar0234->dev, "failed to get xclk %ld\n",
+				PTR_ERR(ar0234->hw_config.xclk));
+		return PTR_ERR(ar0234->hw_config.xclk);
 	}
 
-	ar0234->xclk_freq = clk_get_rate(ar0234->xclk);
-	if (ar0234->xclk_freq != AR0234_XCLK_FREQ) {
-		dev_err(dev, "xclk frequency not supported: %d Hz\n",
-			ar0234->xclk_freq);
+	xclk_freq = clk_get_rate(ar0234->hw_config.xclk);
+	if (xclk_freq != AR0234_XCLK_FREQ) {
+		dev_err(ar0234->dev, "xclk frequency not supported: %d Hz\n",
+			xclk_freq);
 		return -EINVAL;
 	}
 
 	ret = ar0234_get_regulators(ar0234);
 	if (ret) {
-		dev_err(dev, "failed to get regulators\n");
+		dev_err(ar0234->dev, "failed to get regulators\n");
 		return ret;
 	}
 
 	/* Request optional enable pin */
-	ar0234->reset_gpio =
-		devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
+	ar0234->hw_config.reset_gpio =
+		devm_gpiod_get_optional(ar0234->dev, "reset", GPIOD_OUT_HIGH);
 
 	/*
 	* The sensor must be powered for ar0234_identify_module()
 	* to be able to read the CHIP_ID register
 	*/
-	ret = ar0234_power_on(dev);
+	ret = ar0234_power_on(ar0234->dev);
 	if (ret)
 		return ret;
 
@@ -1377,20 +1404,20 @@ static int ar0234_probe(struct i2c_client *client)
 
 	ret = media_entity_pads_init(&ar0234->sd.entity, NUM_PADS, ar0234->pad);
 	if (ret) {
-		dev_err(dev, "failed to init entity pads: %d\n", ret);
+		dev_err(ar0234->dev, "failed to init entity pads: %d\n", ret);
 		goto error_handler_free;
 	}
 
 	ret = v4l2_async_register_subdev_sensor(&ar0234->sd);
 	if (ret < 0) {
-		dev_err(dev, "failed to register sensor sub-device: %d\n", ret);
+		dev_err(ar0234->dev, "failed to register sensor sub-device: %d\n", ret);
 		goto error_media_entity;
 	}
 
 	/* Enable runtime PM and turn off the device */
-	pm_runtime_set_active(dev);
-	pm_runtime_enable(dev);
-	pm_runtime_idle(dev);
+	pm_runtime_set_active(ar0234->dev);
+	pm_runtime_enable(ar0234->dev);
+	pm_runtime_idle(ar0234->dev);
 
 	return 0;
 
@@ -1401,7 +1428,7 @@ error_handler_free:
 	ar0234_free_controls(ar0234);
 
 error_power_off:
-	ar0234_power_off(dev);
+	ar0234_power_off(ar0234->dev);
 
 	return ret;
 }
