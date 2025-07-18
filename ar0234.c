@@ -1343,6 +1343,11 @@ static int ar0234_probe(struct i2c_client *client)
 		return -EINVAL;
 	}
 
+	dev_dbg(ar0234->dev,
+		"clock: %lu Hz, link_frequency: %llu bps, lanes: %d\n",
+		xclk_freq, AR0234_DEFAULT_LINK_FREQ,
+		ar0234->hw_config.num_data_lanes);
+
 	ret = ar0234_get_regulators(ar0234);
 	if (ret) {
 		dev_err(ar0234->dev, "failed to get regulators\n");
@@ -1410,7 +1415,8 @@ static int ar0234_probe(struct i2c_client *client)
 
 	ret = v4l2_async_register_subdev_sensor(&ar0234->sd);
 	if (ret < 0) {
-		dev_err(ar0234->dev, "failed to register sensor sub-device: %d\n", ret);
+		dev_err(ar0234->dev,
+			"failed to register sensor sub-device: %d\n", ret);
 		goto error_media_entity;
 	}
 
