@@ -590,6 +590,19 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	return 0;
 }
 
+static void ar0234_adjust_exposure_range(struct ar0234 *ar0234)
+{
+	int exposure_max, exposure_def;
+
+	/* Honour the VBLANK limits when setting exposure. */
+	exposure_max = ar0234->mode.format->height + ar0234->vblank->val -
+		       AR0234_EXPOSURE_MIN;
+	exposure_def = min(exposure_max, ar0234->exposure->val);
+	__v4l2_ctrl_modify_range(ar0234->exposure, ar0234->exposure->minimum,
+				 exposure_max, ar0234->exposure->step,
+				 exposure_def);
+}
+
 static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ar0234 *ar0234 =
@@ -597,19 +610,8 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	int ret;
 
-	if (ctrl->id == V4L2_CID_VBLANK) {
-		int exposure_max, exposure_def;
-
-		/* Update max exposure while meeting expected vblanking */
-		exposure_max = ar0234->mode->height + ctrl->val - 4;
-		exposure_def = (exposure_max < AR0234_EXPOSURE_DEFAULT) ?
-				       exposure_max :
-				       AR0234_EXPOSURE_DEFAULT;
-		__v4l2_ctrl_modify_range(ar0234->exposure,
-					 ar0234->exposure->minimum,
-					 exposure_max, ar0234->exposure->step,
-					 exposure_def);
-	}
+	if (ctrl->id == V4L2_CID_VBLANK)
+		ar0234_adjust_exposure_range(ar0234);
 
 	/*
 	* Applying V4L2 control value only happens
@@ -827,14 +829,62 @@ static int ar0234_get_pad_format(struct v4l2_subdev *sd,
 	return ret;
 }
 
+static int ar0234_get_bit_depth_id(struct ar0234 *ar0234, u32 code,
+				   enum ar0234_bit_depth_id *bit_depth_id)
+{
+	enum ar0234_bit_depth_id i;
+
+	if (!bit_depth_id)
+		return -EINVAL;
+
+	u32 const *codes = ar0234_get_codes(ar0234);
+
+	for (i = 0; i < AR0234_BIT_DEPTH_ID_AMOUNT; i++)
+		if (codes[i] == code)
+			break;
+
+	if (i >= AR0234_BIT_DEPTH_ID_AMOUNT)
+		return -ENOENT;
+
+	*bit_depth_id = i;
+
+	return 0;
+}
+
+static struct ar0234_timing const *ar0234_get_timing(struct ar0234 *ar0234)
+{
+	return &ar0234->mode.format->timing[ar0234->hw_config.lane_mode]
+				    [ar0234->mode.bit_depth];
+}
+
+static void ar0234_set_framing_limits(struct ar0234 *ar0234)
+{
+	int hblank;
+	const struct ar0234_format *format = ar0234->mode.format;
+	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
+
+	/* Update limits and set FPS to default */
+	__v4l2_ctrl_modify_range(
+		ar0234->vblank, timing->frame_length_lines_min - format->height,
+		AR0234_VTS_MAX - format->height, ar0234->vblank->step,
+		timing->frame_length_lines_min - format->height);
+
+	/* Setting this will adjust the exposure limits as well */
+	__v4l2_ctrl_s_ctrl(ar0234->vblank,
+			   timing->frame_length_lines_min - format->height);
+
+	hblank = timing->line_length_pck - format->width;
+	__v4l2_ctrl_modify_range(ar0234->hblank, hblank, hblank, 1, hblank);
+	__v4l2_ctrl_s_ctrl(ar0234->hblank, hblank);
+}
+
 static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_state *sd_state,
 				 struct v4l2_subdev_format *fmt)
 {
 	struct ar0234 *ar0234 = to_ar0234(sd);
-	const struct ar0234_mode *mode;
+	struct ar0234_format const *format;
 	struct v4l2_mbus_framefmt *framefmt;
-	int exposure_max, exposure_def, hblank;
 
 	if (fmt->pad >= NUM_PADS)
 		return -EINVAL;
@@ -845,49 +895,21 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 		fmt->format.code =
 			ar0234_get_format_code(ar0234, fmt->format.code);
 
-		mode = v4l2_find_nearest_size(supported_modes,
-					      ARRAY_SIZE(supported_modes),
-					      width, height, fmt->format.width,
-					      fmt->format.height);
-		ar0234_update_image_pad_format(ar0234, mode, fmt);
+		format = v4l2_find_nearest_size(
+			supported_formats, ARRAY_SIZE(supported_formats), width,
+			height, fmt->format.width, fmt->format.height);
+		ar0234_update_image_pad_format(ar0234, format, fmt);
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 			framefmt = v4l2_subdev_state_get_format(sd_state,
 								fmt->pad);
 			*framefmt = fmt->format;
-		} else if (ar0234->mode != mode ||
+		} else if (ar0234->mode.format != format ||
 			   ar0234->fmt.code != fmt->format.code) {
 			ar0234->fmt = fmt->format;
-			ar0234->mode = mode;
-			/* Update limits and set FPS to default */
-			__v4l2_ctrl_modify_range(ar0234->vblank,
-						 AR0234_VBLANK_MIN,
-						 AR0234_VTS_MAX - mode->height,
-						 1,
-						 mode->vts_def - mode->height);
-			__v4l2_ctrl_s_ctrl(ar0234->vblank,
-					   mode->vts_def - mode->height);
-			/*
-			* Update max exposure while meeting
-			* expected vblanking
-			*/
-			exposure_max = mode->vts_def - 4;
-			exposure_def =
-				(exposure_max < AR0234_EXPOSURE_DEFAULT) ?
-					exposure_max :
-					AR0234_EXPOSURE_DEFAULT;
-			__v4l2_ctrl_modify_range(ar0234->exposure,
-						 ar0234->exposure->minimum,
-						 exposure_max,
-						 ar0234->exposure->step,
-						 exposure_def);
-			/*
-			* Currently PPL is fixed to AR0234_PPL_DEFAULT, so
-			* hblank depends on mode->width only, and is not
-			* changeble in any way other than changing the mode.
-			*/
-			hblank = AR0234_PPL_DEFAULT - mode->width;
-			__v4l2_ctrl_modify_range(ar0234->hblank, hblank, hblank,
-						 1, hblank);
+			ar0234->mode.format = format;
+			ar0234_get_bit_depth_id(ar0234, fmt->format.code,
+						&ar0234->mode.bit_depth);
+			ar0234_set_framing_limits(ar0234);
 		}
 	} else {
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
@@ -975,6 +997,8 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
+	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
+
 	const struct ar0234_reg_list *reg_list;
 	int ret;
 
@@ -1191,9 +1215,9 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	struct v4l2_fwnode_device_properties props;
 	struct v4l2_ctrl_handler *ctrl_hdlr;
-	unsigned int height = ar0234->mode->height;
-	int exposure_max, exposure_def, hblank;
+	int exposure_max, exposure_def;
 	struct v4l2_ctrl *ctrl;
+	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
 	int i, ret;
 
 	ctrl_hdlr = &ar0234->ctrl_handler;
@@ -1211,18 +1235,21 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	if (ar0234->pixel_rate)
 		ar0234->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
-	/* Initial vblank/hblank/exposure parameters based on current mode */
+	/*
+	 * Create the controls here, but mode specific limits are setup
+	 * in the ar0234_set_framing_limits() call below.
+	 */
 	ar0234->vblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
-					   V4L2_CID_VBLANK, AR0234_VBLANK_MIN,
-					   AR0234_VTS_MAX - height, 1,
-					   ar0234->mode->vts_def - height);
-	hblank = AR0234_PPL_DEFAULT - ar0234->mode->width;
+					   V4L2_CID_VBLANK, 0,
+					   0xFFFF, 1, 0);
+
 	ar0234->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
-					   V4L2_CID_HBLANK, hblank, hblank, 1,
-					   hblank);
+					   V4L2_CID_HBLANK, 0, 0xFFFF, 1,
+					   0);
 	if (ar0234->hblank)
 		ar0234->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
-	exposure_max = ar0234->mode->vts_def - 4;
+
+	exposure_max = timing->frame_length_lines_min - AR0234_EXPOSURE_MIN;
 	exposure_def = (exposure_max < AR0234_EXPOSURE_DEFAULT) ?
 			       exposure_max :
 			       AR0234_EXPOSURE_DEFAULT;
@@ -1284,6 +1311,12 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	}
 
 	ar0234->sd.ctrl_handler = ctrl_hdlr;
+
+	mutex_lock(&ar0234->mutex);
+
+	ar0234_set_framing_limits(ar0234);
+
+	mutex_unlock(&ar0234->mutex);
 
 	return 0;
 
