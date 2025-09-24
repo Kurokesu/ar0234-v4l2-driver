@@ -30,7 +30,7 @@ cd ar0234-v4l2-driver/
 To compile and install the kernel driver, execute the provided installation script:
 
 ```bash 
-sudo sh setup.sh
+sudo ./setup.sh
 ```
 
 ### Updating the Boot Configuration
