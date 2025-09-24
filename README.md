@@ -4,23 +4,24 @@ This guide provides detailed instructions on how to install the AR0234 kernel dr
 
 ## Prerequisites
 
-Before you begin the installation process, please ensure the following prerequisites are met:
-
-- **Kernel version**: You should be running on a Linux kernel version 6.1 or newer. You can verify your kernel version by executing `uname -r` in your terminal.
-
-- **Development tools**: Essential tools such as `gcc`, `dkms`, and `linux-headers` are required for compiling a kernel module. If not already installed, these can be installed using the package manager with the following command:
-  
-   ```bash 
-   sudo apt install linux-headers dkms git
-   ```
+**Kernel version**: You should be running on a Linux kernel version 6.1 or newer. You can verify your kernel version by executing `uname -r` in your terminal.
    
 ## Installation Steps
+
+### Development tools
+
+Required tools: `gcc`, `dkms`, `linux-headers`. If not already installed, install with:
+
+```bash 
+sudo apt install -y linux-headers dkms git
+```
 
 ### Fetching the Source Code
 
 Clone the repository to your local machine and navigate to the cloned directory:
 
 ```bash
+cd ~
 git clone https://github.com/Kurokesu/ar0234-v4l2-driver.git
 cd ar0234-v4l2-driver/
 ```
@@ -83,6 +84,10 @@ sudo apt install -y libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev
 ```
 
 ```bash
+sudo apt install -y libavcodec-dev libavdevice-dev
+```
+
+```bash
 sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
 sudo apt install -y meson ninja-build
 ```
@@ -129,11 +134,6 @@ sudo ninja -C build install
 
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
-
-#### Install rpicam-apps Dependencies
-```bash
-sudo apt install libavcodec-dev libavdevice-dev -y
-```
 
 #### Clone the rpicam-apps Repository
 
