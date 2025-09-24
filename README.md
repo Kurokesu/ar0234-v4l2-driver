@@ -71,11 +71,13 @@ On Raspberry Pi devices, `libcamera` and `rpicam-apps` must be rebuilt together.
 ### Build libcamera and rpicam-apps
 
 #### Remove Pre-installed rpicam-apps
+
 ```bash
 sudo apt remove --purge rpicam-apps
 ```
 
 #### Install rpicam-apps Dependencies
+
 ```bash
 sudo apt install -y libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev
 ```
@@ -86,6 +88,7 @@ sudo apt install -y meson ninja-build
 ```
 
 #### Install libcamera Dependencies
+
 ```bash
 sudo apt install -y libboost-dev
 sudo apt install -y libgnutls28-dev openssl libtiff5-dev pybind11-dev
@@ -96,6 +99,7 @@ sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
 #### Clone the Forked libcamera Repository
+
 Download a local copy of Kurokesu's fork of `libcamera` with `ar0234` modifications from GitHub:
 
 ```bash
@@ -105,13 +109,17 @@ cd libcamera/
 ```
 
 #### Configure the Build Environment
+
 Run `meson` to configure the build environment:
+
 ```bash
 meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
 
 #### Build and Install libcamera
+
 Finally, run the following command to build and install `libcamera`:
+
 ```bash
 sudo ninja -C build install
 ```
@@ -128,7 +136,9 @@ sudo apt install libavcodec-dev libavdevice-dev -y
 ```
 
 #### Clone the rpicam-apps Repository
+
 Download a local copy of Raspberry Pi’s `rpicam-apps` GitHub repository:
+
 ```bash
 cd ~
 git clone https://github.com/raspberrypi/rpicam-apps.git
@@ -136,30 +146,38 @@ cd rpicam-apps
 ```
 
 #### Configure the rpicam-apps Build
+
 Run the following `meson` command to configure the build:
+
 ```bash
 meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
 ```
 
 #### Build rpicam-apps
+
 Run the following command to build:
+
 ```bash
 meson compile -C build
 ```
 
 #### Install rpicam-apps
+
 Run the following command to install `rpicam-apps`:
+
 ```bash
 sudo meson install -C build
 ```
 
 > [!TIP]  
-> The command above should automatically update the `ldconfig` cache. If you have trouble accessing your new `rpicam-apps` build, run the following command to update the cache:  
+> The command above should automatically update the `ldconfig` cache. If you have trouble accessing your new `rpicam-apps` build, run the following command to update the cache:
+> 
 > ```bash
 > sudo ldconfig
 > ```
 
 #### Verify the rpicam-apps Build
+
 Verify that `rpicam-apps` has been rebuilt correctly by checking the version:
 
 ```bash
@@ -167,6 +185,7 @@ rpicam-hello --version
 ```
 
 You should get output similar to this, with your build date:
+
 ```
 rpicam-apps build: v1.6.0 000000000000-invalid 08-05-2025 (16:08:14)
 rpicam-apps capabilites: egl:1 qt:1 drm:1 libav:1
@@ -174,12 +193,15 @@ libcamera build: v0.4.0
 ```
 
 ### Verify that ar0234 is Being Detected Correctly
+
 Do not forget to reboot!
+
 ```bash
 sudo reboot
 ```
 
 Run the following command to list available cameras:
+
 ```bash
 rpicam-hello --list-cameras
 ```
