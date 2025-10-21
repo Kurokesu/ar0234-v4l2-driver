@@ -109,7 +109,7 @@ Download a local copy of Kurokesu's fork of `libcamera` with `ar0234` modificati
 
 ```bash
 cd ~
-git clone --single-branch --branch ar0234 https://github.com/Kurokesu/libcamera.git
+git clone https://github.com/Kurokesu/libcamera.git --branch ar0234
 cd libcamera/
 ```
 
