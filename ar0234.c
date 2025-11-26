@@ -414,7 +414,7 @@ static const struct ar0234_format ar0234_formats_24_900[] = {
 };
 
 struct ar0234_hw_config {
-	struct clk *xclk; /* system clock to AR0234 */
+	struct clk *extclk;
 	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
 	struct gpio_desc *reset_gpio;
 	unsigned int num_data_lanes;
@@ -1138,7 +1138,7 @@ static int ar0234_power_on(struct device *dev)
 		return ret;
 	}
 
-	ret = clk_prepare_enable(ar0234->hw_config.xclk);
+	ret = clk_prepare_enable(ar0234->hw_config.extclk);
 	if (ret) {
 		dev_err(&client->dev, "%s: failed to enable clock\n",
 			__func__);
@@ -1165,7 +1165,7 @@ static int ar0234_power_off(struct device *dev)
 
 	gpiod_set_value_cansleep(ar0234->hw_config.reset_gpio, 0);
 	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
-	clk_disable_unprepare(ar0234->hw_config.xclk);
+	clk_disable_unprepare(ar0234->hw_config.extclk);
 
 	return 0;
 }

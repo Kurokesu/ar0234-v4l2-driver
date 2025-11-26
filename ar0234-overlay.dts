@@ -41,7 +41,7 @@
 				status = "okay";
 
 				clocks = <&cam1_clk>;
-				clock-names = "xclk";
+				clock-names = "extclk";
 
 				vana-supply = <&cam1_reg>;	/* 2.8v */
 				vdig-supply = <&cam_dummy_reg>;	/* 1.8v */
