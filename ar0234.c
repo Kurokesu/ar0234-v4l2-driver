@@ -198,34 +198,56 @@ struct ar0234_mode {
 
 #define DELAY 0xffff	/* Delay for specified number of ms */
 
-static const struct ar0234_reg common_init[] = {
+static const struct ar0234_reg ar0234_pll_config_24_720_8bit[] = {
+	{ 0x302A, 0x0008 },	// VT_PIX_CLK_DIV
+	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
+	{ 0x302E, 0x0001 },	// PRE_PLL_CLK_DIV
+	{ 0x3030, 0x001E },	// PLL_MULTIPLIER
+	{ 0x3036, 0x0008 },	// OP_PIX_CLK_DIV
+	{ 0x3038, 0x0002 },	// OP_SYS_CLK_DIV
+};
+
+static const struct ar0234_reg ar0234_pll_config_24_900_10bit[] = {
+	{ 0x302A, 0x0005 },	// VT_PIX_CLK_DIV
+	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
+	{ 0x302E, 0x0008 },	// PRE_PLL_CLK_DIV
+	{ 0x3030, 0x0096 },	// PLL_MULTIPLIER
+	{ 0x3036, 0x000A },	// OP_PIX_CLK_DIV
+	{ 0x3038, 0x0001 },	// OP_SYS_CLK_DIV
+};
+
+static const struct ar0234_reg ar0234_mipi_config_24_720_8bit[] = {
+	{ 0x31B0, 0x0080 },	// FRAME_PREAMBLE
+	{ 0x31B2, 0x005C },	// LINE_PREAMBLE
+	{ 0x31B4, 0x5248 },	// MIPI_TIMING_0
+	{ 0x31B6, 0x4258 },	// MIPI_TIMING_1
+	{ 0x31B8, 0x904C },	// MIPI_TIMING_2
+	{ 0x31BA, 0x028B },	// MIPI_TIMING_3
+	{ 0x31BC, 0x0D89 },	// MIPI_TIMING_4
+	{ 0x3354, 0x002A }, // MIPI_CNTRL
+};
+
+static const struct ar0234_reg ar0234_mipi_config_24_900_10bit[] = {
+	{ 0x31B0, 0X0082 },	// FRAME_PREAMBLE
+	{ 0x31B2, 0X005C },	// LINE_PREAMBLE
+	{ 0x31B4, 0X4248 },	// MIPI_TIMING_0
+	{ 0x31B6, 0X4258 },	// MIPI_TIMING_1
+	{ 0x31B8, 0X904B },	// MIPI_TIMING_2
+	{ 0x31BA, 0X030B },	// MIPI_TIMING_3
+	{ 0x31BC, 0X0D89 },	// MIPI_TIMING_4
+	{ 0x3354, 0x002B }, // MIPI_CNTRL
+};
+
+static const struct ar0234_reg ar0234_reset[] = {
 	//[Reset]
 	{DELAY, 20 },
 	{AR0234_REG_RESET, AR0234_REG_RESET_RESET}, //RESET_REGISTER
 	{DELAY, 200 },
 	{ 0x301A, 0x2058 },	// RESET_REGISTER
+};
 
-	/* PLL Setup */
-	{ 0x302A, 0x0005 },	// VT_PIX_CLK_DIV
-	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
-	{ 0x302E, 0x0008 },	// PRE_PLL_CLK_DIV
-	{ 0x3030, 0x0096 },	// PLL_MULTIPLIER
-	{ 0x3036, 0x000a },	// OP_PIX_CLK_DIV
-	{ 0x3038, 0x0001 },	// OP_SYS_CLK_DIV
+static const struct ar0234_reg common_init[] = {
 	{ 0x30B0, 0x0028 },	// DIGITAL_TEST
-	{ 0x31B0, 0x0082 },	// FRAME_PREAMBLE
-	{ 0x31B2, 0x005C },	// LINE_PREAMBLE
-	{ 0x31B4, 0x4248 },	// MIPI_TIMING_0
-	{ 0x31B6, 0x4258 },	// MIPI_TIMING_1
-	{ 0x31B8, 0x904b },	// MIPI_TIMING_2
-	{ 0x31BA, 0x030b },	// MIPI_TIMING_3
-	{ 0x31BC, 0x0d89 },	// MIPI_TIMING_4
-
-	/* MIPI Config */
-	{ 0x3354, 0x002b },	// MIPI_CNTRL
-	{ 0x31AE, 0x0202 },	// SERIAL_FORMAT
-
-	{ 0x31AC, 0x0A0A },	// DATA_FORMAT_BITS
 	{ 0x306E, 0x9010 },	// DATAPATH_SELECT
 	{ 0x3082, 0x0003 },	// OPERATION_MODE_CTRL
 	{ 0x3040, 0x0000 },	// READ_MODE
