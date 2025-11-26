@@ -145,8 +145,8 @@ struct ar0234_reg {
 	u16 val;
 };
 
-struct ar0234_reg_list {
-	unsigned int num_of_regs;
+struct ar0234_reg_sequence {
+	unsigned int amount;
 	const struct ar0234_reg *regs;
 };
 
@@ -180,8 +180,7 @@ struct ar0234_format {
 	struct ar0234_timing timing[AR0234_LANE_MODE_ID_AMOUNT]
 				   [AR0234_BIT_DEPTH_ID_AMOUNT];
 
-	/* Default register values */
-	struct ar0234_reg_list reg_list;
+	struct ar0234_reg_sequence reg_sequence;
 };
 
 struct ar0234_mode {
@@ -1008,7 +1007,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
 
-	const struct ar0234_reg_list *reg_list;
+	const struct ar0234_reg_sequence *reg_seq;
 	int ret;
 
 	ret = ar0234_write_regs(ar0234, common_init, ARRAY_SIZE(common_init));
@@ -1019,8 +1018,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	}
 
 	/* Apply default values of current mode */
-	reg_list = &ar0234->mode.format->reg_list;
-	ret = ar0234_write_regs(ar0234, reg_list->regs, reg_list->num_of_regs);
+	reg_seq = &ar0234->mode.format->reg_sequence;
+	ret = ar0234_write_regs(ar0234, reg_seq->regs, reg_seq->amount);
 	if (ret) {
 		dev_err(&client->dev, "%s failed to set mode\n", __func__);
 		return ret;
