@@ -38,12 +38,12 @@
 #define AR0234_REG_RESET_STREAM_ON   0x205C
 
 /* External clock frequency is 24.0M */
-#define AR0234_XCLK_FREQ		24000000
+#define AR0234_FREQ_EXTCLK		24000000
 
-/* Pixel rate is fixed at 180M for all the modes */
-#define AR0234_PIXEL_RATE		180000000
+#define AR0234_FREQ_PIXCLK_2LANE	45000000
+#define AR0234_FREQ_PIXCLK_4LANE	90000000
 
-#define AR0234_DEFAULT_LINK_FREQ	450000000
+#define AR0234_FREQ_LINK_10BIT	450000000
 
 #define LINE_LENGTH_PCK			0x300C
 
@@ -338,7 +338,7 @@ static const u32 mono_codes[] = {
 };
 
 static const s64 link_freq[] = {
-	AR0234_DEFAULT_LINK_FREQ,
+	AR0234_FREQ_LINK_10BIT,
 };
 
 /*
@@ -1409,7 +1409,7 @@ static int ar0234_parse_hwcfg(struct ar0234 *ar0234)
 	}
 
 	if (ep_cfg.nr_of_link_frequencies != 1 ||
-	    ep_cfg.link_frequencies[0] != AR0234_DEFAULT_LINK_FREQ) {
+	    ep_cfg.link_frequencies[0] != AR0234_FREQ_LINK_10BIT) {
 		dev_err(ar0234->dev, "Link frequency not supported: %lld\n",
 			ep_cfg.link_frequencies[0]);
 		goto error_out;
