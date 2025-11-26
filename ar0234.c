@@ -416,7 +416,7 @@ static const struct ar0234_format ar0234_formats_24_900[] = {
 struct ar0234_hw_config {
 	struct clk *extclk;
 	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
-	struct gpio_desc *reset_gpio;
+	struct gpio_desc *gpio_reset;
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
 };
@@ -1145,7 +1145,7 @@ static int ar0234_power_on(struct device *dev)
 		goto reg_off;
 	}
 
-	gpiod_set_value_cansleep(ar0234->hw_config.reset_gpio, 1);
+	gpiod_set_value_cansleep(ar0234->hw_config.gpio_reset, 1);
 	usleep_range(AR0234_XCLR_MIN_DELAY_US,
 			AR0234_XCLR_MIN_DELAY_US + AR0234_XCLR_DELAY_RANGE_US);
 
@@ -1163,7 +1163,7 @@ static int ar0234_power_off(struct device *dev)
 	struct v4l2_subdev *sd = i2c_get_clientdata(client);
 	struct ar0234 *ar0234 = to_ar0234(sd);
 
-	gpiod_set_value_cansleep(ar0234->hw_config.reset_gpio, 0);
+	gpiod_set_value_cansleep(ar0234->hw_config.gpio_reset, 0);
 	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
 	clk_disable_unprepare(ar0234->hw_config.extclk);
 
