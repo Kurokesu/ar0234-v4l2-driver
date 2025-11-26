@@ -273,7 +273,7 @@ static const struct ar0234_reg common_init[] = {
 	{ 0x3064, 0x1982 },	// EMBEDDED DATA
 };
 
-static const struct ar0234_reg mode_1920x1200_60_regs[] = {
+static const struct ar0234_reg ar0234_1920x1200_config[] = {
 	// [1920x1200 60fps]
 	/* Cropping / output size */
 	{ 0x3002, 0x0008 },	// Y_ADDR_START
@@ -287,7 +287,7 @@ static const struct ar0234_reg mode_1920x1200_60_regs[] = {
 //	{0x3028, 0x0010}, //ROW_SPEED
 };
 
-static const struct ar0234_reg mode_1280x800_60_regs[] = {
+static const struct ar0234_reg ar0234_1280x800_config[] = {
 	// [1280x800 60fps]
 	{ 0x3002, 0x00d0 },	// Y_ADDR_START
 	{ 0x3004, 0x0148 },	// X_ADDR_START
@@ -348,7 +348,7 @@ static const s64 link_freq[] = {
 #define NUM_CODES ARRAY_SIZE(bayer_codes)
 
 /* Format configs */
-static const struct ar0234_format supported_formats[] = {
+static const struct ar0234_format ar0234_formats_24_900[] = {
 	{
 		/* 1280x800 60fps mode */
 		.width = 1920,
@@ -377,10 +377,7 @@ static const struct ar0234_format supported_formats[] = {
 				.frame_length_lines_min = AR0234_VTS_30FPS,
 			},
 		},
-		.reg_list = {
-			.num_of_regs = ARRAY_SIZE(mode_1920x1200_60_regs),
-			.regs = mode_1920x1200_60_regs,
-		},
+		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
 	},
 	{
 		/* Cropped 1280x720 30fps mode */
@@ -410,10 +407,9 @@ static const struct ar0234_format supported_formats[] = {
 				.frame_length_lines_min = AR0234_VTS_30FPS,
 			},
 		},
-		.reg_list = {
-			.num_of_regs = ARRAY_SIZE(mode_1280x800_60_regs),
-			.regs = mode_1280x800_60_regs,
-		},
+		.reg_sequence = AR0234_REG_SEQ(ar0234_1280x800_config),
+	},
+};
 	},
 };
 
@@ -580,11 +576,11 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 							fmt->colorspace,
 							fmt->ycbcr_enc);
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
-	fmt->width = supported_formats[0].width;
-	fmt->height = supported_formats[0].height;
+	fmt->width = ar0234_formats_24_900[0].width;
+	fmt->height = ar0234_formats_24_900[0].height;
 	fmt->field = V4L2_FIELD_NONE;
 
-	ar0234->mode.format = &supported_formats[0];
+	ar0234->mode.format = &ar0234_formats_24_900[0];
 	ar0234->mode.bit_depth = AR0234_BIT_DEPTH_ID_10BIT;
 }
 
@@ -600,8 +596,8 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	mutex_lock(&ar0234->mutex);
 
 	/* Initialize try_fmt for the image pad */
-	try_fmt_img->width = supported_formats[0].width;
-	try_fmt_img->height = supported_formats[0].height;
+	try_fmt_img->width = ar0234_formats_24_900[0].width;
+	try_fmt_img->height = ar0234_formats_24_900[0].height;
 	try_fmt_img->code = ar0234_get_format_code(ar0234, 0);
 	try_fmt_img->field = V4L2_FIELD_NONE;
 
@@ -765,15 +761,15 @@ static int ar0234_enum_frame_size(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (fse->pad == IMAGE_PAD) {
-		if (fse->index >= ARRAY_SIZE(supported_formats))
+		if (fse->index >= ARRAY_SIZE(ar0234_formats_24_900))
 			return -EINVAL;
 
 		if (fse->code != ar0234_get_format_code(ar0234, fse->code))
 			return -EINVAL;
 
-		fse->min_width = supported_formats[fse->index].width;
+		fse->min_width = ar0234_formats_24_900[fse->index].width;
 		fse->max_width = fse->min_width;
-		fse->min_height = supported_formats[fse->index].height;
+		fse->min_height = ar0234_formats_24_900[fse->index].height;
 		fse->max_height = fse->min_height;
 	} else {
 		if (fse->code != MEDIA_BUS_FMT_SENSOR_DATA || fse->index > 0)
@@ -926,7 +922,7 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 							fmt->format.code);
 
 		format = v4l2_find_nearest_size(
-			supported_formats, ARRAY_SIZE(supported_formats), width,
+			ar0234_formats_24_900, ARRAY_SIZE(ar0234_formats_24_900), width,
 			height, fmt->format.width, fmt->format.height);
 		ar0234_update_image_pad_format(ar0234, format, fmt);
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
@@ -1490,7 +1486,7 @@ static int ar0234_probe(struct i2c_client *client)
 		goto error_power_off;
 
 	/* Set default mode to max resolution */
-	ar0234->mode.format = &supported_formats[0];
+	ar0234->mode.format = &ar0234_formats_24_900[0];
 
 	/* sensor doesn't enter LP-11 state upon power up until and unless
 	* streaming is started, so upon power up switch the modes to:
