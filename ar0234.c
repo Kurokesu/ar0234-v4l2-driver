@@ -410,6 +410,32 @@ static const struct ar0234_format ar0234_formats_24_900[] = {
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1280x800_config),
 	},
 };
+
+struct ar0234_pll_config {
+	s64 freq_link;
+	u64 freq_extclk;
+	u32 freq_pixclk[AR0234_LANE_MODE_ID_AMOUNT];
+
+	unsigned int formats_amount;
+	struct ar0234_format const *formats;
+
+	struct ar0234_reg_sequence regs_pll;
+	struct ar0234_reg_sequence regs_mipi[AR0234_BIT_DEPTH_ID_AMOUNT];
+};
+
+static const struct ar0234_pll_config ar0234_pll_config = {
+	.freq_link = AR0234_FREQ_LINK_10BIT,
+	.freq_extclk = AR0234_FREQ_EXTCLK,
+	.freq_pixclk = {
+		[AR0234_LANE_MODE_ID_2] = AR0234_FREQ_PIXCLK_2LANE,
+		[AR0234_LANE_MODE_ID_4] = AR0234_FREQ_PIXCLK_4LANE,
+	},
+	.formats = ar0234_formats_24_900,
+	.formats_amount = ARRAY_SIZE(ar0234_formats_24_900),
+	.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_900_10bit),
+	.regs_mipi = {
+		[AR0234_BIT_DEPTH_ID_8BIT] = AR0234_REG_SEQ(ar0234_mipi_config_24_720_8bit),
+		[AR0234_BIT_DEPTH_ID_10BIT] = AR0234_REG_SEQ(ar0234_mipi_config_24_900_10bit),
 	},
 };
 
@@ -423,9 +449,10 @@ struct ar0234_hw_config {
 
 struct ar0234 {
 	struct device *dev;
+	struct ar0234_hw_config hw_config;
+
 	struct v4l2_subdev sd;
 	struct media_pad pad[NUM_PADS];
-	struct ar0234_hw_config hw_config;
 
 	struct v4l2_mbus_framefmt fmt;
 
@@ -433,7 +460,6 @@ struct ar0234 {
 
 	struct v4l2_ctrl_handler ctrl_handler;
 	/* V4L2 Controls */
-	struct v4l2_ctrl *pixel_rate;
 	struct v4l2_ctrl *exposure;
 	struct v4l2_ctrl *vflip;
 	struct v4l2_ctrl *hflip;
