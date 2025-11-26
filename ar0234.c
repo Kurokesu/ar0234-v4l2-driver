@@ -1046,14 +1046,72 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 	return -EINVAL;
 }
 
+static int ar0234_config_pll(struct ar0234 *ar0234)
+{
+	int ret;
+
+	ret = ar0234_write_regs(ar0234, ar0234_pll_config.regs_pll.regs,
+		ar0234_pll_config.regs_pll.amount);
+
+	if (ret)
+		return ret;
+
+	// TODO
+	ret = ar0234_write_regs(ar0234, 
+		ar0234_pll_config.regs_mipi[AR0234_BIT_DEPTH_ID_10BIT].regs,
+		ar0234_pll_config.regs_mipi[AR0234_BIT_DEPTH_ID_10BIT].amount);
+
+	return ret;
+}
+
+static int ar0234_config_serial_format(struct ar0234 *ar0234)
+{
+	int ret;
+
+	// TODO
+	// { 0x31AC, 0x0A0A },	// DATA_FORMAT_BITS
+
+	/* Set lane amount */
+	ret = ar0234_write_reg(ar0234, 0x31AE, AR0234_REG_VALUE_16BIT,
+		(0x0200 | ar0234->hw_config.num_data_lanes));
+	
+	// if (ret)
+	// 	return ret;
+
+	return ret;
+}
+
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
 
 	const struct ar0234_reg_sequence *reg_seq;
 	int ret;
 
+	/* Reset */
+	ret = ar0234_write_regs(ar0234, ar0234_reset, ARRAY_SIZE(ar0234_reset));
+	if (ret) {
+		dev_err(&client->dev, "%s failed to reset\n", __func__);
+		return ret;
+	}
+
+	/* PLL and MIPI config */
+	ret = ar0234_config_pll(ar0234);
+	if (ret) {
+		dev_err(&client->dev, "%s failed to configure pll settings\n",
+			__func__);
+		return ret;
+	}
+
+	/* Serial format */
+	ret = ar0234_config_serial_format(ar0234);
+	if (ret) {
+		dev_err(&client->dev, "%s failed to configure serial format\n",
+			__func__);
+		return ret;
+	}
+
+	/* Common */
 	ret = ar0234_write_regs(ar0234, common_init, ARRAY_SIZE(common_init));
 	if (ret) {
 		dev_err(&client->dev, "%s failed to set common settings\n",
