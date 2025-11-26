@@ -113,6 +113,12 @@
 #define AR0234_TESTP_BLUE_DEFAULT	0
 #define AR0234_TESTP_GREENB_DEFAULT	0
 
+/* Helper macro for declaring ar0234 reg sequence */
+#define AR0234_REG_SEQ(_reg_array)                                      \
+	{                                                               \
+		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
+	}
+
 enum pad_types {
 	IMAGE_PAD,
 	METADATA_PAD,
