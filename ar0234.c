@@ -1261,6 +1261,7 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	int exposure_max, exposure_def;
 	struct v4l2_ctrl *ctrl;
 	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
+	unsigned int pixel_rate;
 	int i, ret;
 
 	ctrl_hdlr = &ar0234->ctrl_handler;
@@ -1272,13 +1273,14 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	ctrl_hdlr->lock = &ar0234->mutex;
 
 	/* By default, PIXEL_RATE is read only */
-	ar0234->pixel_rate = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
+	pixel_rate = ar0234_pll_config.freq_pixclk[ar0234->hw_config.lane_mode];
+	ctrl = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 						V4L2_CID_PIXEL_RATE,
-						AR0234_PIXEL_RATE,
-						AR0234_PIXEL_RATE, 1,
-						AR0234_PIXEL_RATE);
-	if (ar0234->pixel_rate)
-		ar0234->pixel_rate->flags |= V4L2_CTRL_FLAG_READ_ONLY;
+						pixel_rate,
+						pixel_rate, 1,
+						pixel_rate);
+	if (ctrl)
+		ctrl->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
 	/*
 	 * Create the controls here, but mode specific limits are setup
