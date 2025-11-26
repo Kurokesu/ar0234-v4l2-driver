@@ -1196,17 +1196,6 @@ static int ar0234_power_off(struct device *dev)
 	return 0;
 }
 
-static int ar0234_get_regulators(struct ar0234 *ar0234)
-{
-	unsigned int i;
-
-	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
-		ar0234->hw_config.supplies[i].supply = ar0234_supply_name[i];
-
-	return devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
-				       ar0234->hw_config.supplies);
-}
-
 /* Verify chip ID */
 static int ar0234_identify_module(struct ar0234 *ar0234)
 {
@@ -1389,14 +1378,39 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 	mutex_destroy(&ar0234->mutex);
 }
 
-static int ar0234_parse_hwcfg(struct ar0234 *ar0234)
+static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 {
-	struct fwnode_handle *endpoint;
 	struct v4l2_fwnode_endpoint ep_cfg = {
 		.bus_type = V4L2_MBUS_CSI2_DPHY,
 	};
+	struct fwnode_handle *endpoint;
 	struct ar0234_hw_config *hw_config = &ar0234->hw_config;
+	unsigned long extclk_frequency;
 	int ret = -EINVAL;
+	unsigned int i;
+
+	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
+		hw_config->supplies[i].supply = ar0234_supply_name[i];
+
+	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
+				       hw_config->supplies);
+	if (ret) {
+		dev_err(ar0234->dev, "failed to get regulators\n");
+		return ret;
+	}
+
+	/* Get optional reset pin */
+	hw_config->gpio_reset =
+		devm_gpiod_get_optional(ar0234->dev, "reset", GPIOD_OUT_HIGH);
+
+	/* Get input clock (extclk) */
+	hw_config->extclk = devm_clk_get(ar0234->dev, "extclk");
+	if (IS_ERR(hw_config->extclk)) {
+		if (PTR_ERR(hw_config->extclk) != -EPROBE_DEFER)
+			dev_err(ar0234->dev, "failed to get extclk %ld\n",
+				PTR_ERR(hw_config->extclk));
+		return PTR_ERR(hw_config->extclk);
+	}
 
 	endpoint =
 		fwnode_graph_get_next_endpoint(dev_fwnode(ar0234->dev), NULL);
@@ -1431,6 +1445,7 @@ static int ar0234_parse_hwcfg(struct ar0234 *ar0234)
 	if (!ep_cfg.nr_of_link_frequencies) {
 		dev_err(ar0234->dev,
 			"link-frequency property not found in DT\n");
+		ret = -EINVAL;
 		goto error_out;
 	}
 
@@ -1438,8 +1453,23 @@ static int ar0234_parse_hwcfg(struct ar0234 *ar0234)
 	    ep_cfg.link_frequencies[0] != AR0234_FREQ_LINK_10BIT) {
 		dev_err(ar0234->dev, "Link frequency not supported: %lld\n",
 			ep_cfg.link_frequencies[0]);
+		ret = -EINVAL;
 		goto error_out;
 	}
+
+	extclk_frequency = clk_get_rate(hw_config->extclk);
+
+	if (extclk_frequency != AR0234_FREQ_EXTCLK) {
+		dev_err(ar0234->dev, "extclk frequency not supported: %lu Hz\n",
+			extclk_frequency);
+		ret = -EINVAL;
+		goto error_out;
+	}
+
+	dev_info(ar0234->dev,
+		"extclk: %luHz, link_frequency: %lluHz, lanes: %d\n",
+		extclk_frequency, ep_cfg.link_frequencies[0],
+		hw_config->num_data_lanes);
 
 	ret = 0;
 
@@ -1453,7 +1483,6 @@ error_out:
 static int ar0234_probe(struct i2c_client *client)
 {
 	struct ar0234 *ar0234;
-	unsigned int xclk_freq;
 	int ret;
 
 	ar0234 = devm_kzalloc(&client->dev, sizeof(*ar0234), GFP_KERNEL);
@@ -1465,39 +1494,8 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	if (ar0234_parse_hwcfg(ar0234))
+	if (ar0234_parse_hw_config(ar0234))
 		return -EINVAL;
-
-	/* Get system clock (xclk) */
-	ar0234->hw_config.xclk = devm_clk_get(ar0234->dev, NULL);
-	if (IS_ERR(ar0234->hw_config.xclk)) {
-		if (PTR_ERR(ar0234->hw_config.xclk) != -EPROBE_DEFER)
-			dev_err(ar0234->dev, "failed to get xclk %ld\n",
-				PTR_ERR(ar0234->hw_config.xclk));
-		return PTR_ERR(ar0234->hw_config.xclk);
-	}
-
-	xclk_freq = clk_get_rate(ar0234->hw_config.xclk);
-	if (xclk_freq != AR0234_XCLK_FREQ) {
-		dev_err(ar0234->dev, "xclk frequency not supported: %d Hz\n",
-			xclk_freq);
-		return -EINVAL;
-	}
-
-	dev_dbg(ar0234->dev,
-		"clock: %u Hz, link_frequency: %u bps, lanes: %d\n",
-		xclk_freq, AR0234_DEFAULT_LINK_FREQ,
-		ar0234->hw_config.num_data_lanes);
-
-	ret = ar0234_get_regulators(ar0234);
-	if (ret) {
-		dev_err(ar0234->dev, "failed to get regulators\n");
-		return ret;
-	}
-
-	/* Request optional enable pin */
-	ar0234->hw_config.reset_gpio =
-		devm_gpiod_get_optional(ar0234->dev, "reset", GPIOD_OUT_HIGH);
 
 	/*
 	* The sensor must be powered for ar0234_identify_module()
