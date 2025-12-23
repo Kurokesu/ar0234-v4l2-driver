@@ -27,44 +27,31 @@
 #define AR0234_REG_VALUE_08BIT		1
 #define AR0234_REG_VALUE_16BIT		2
 
+#define AR0234_REG_SERIAL_FORMAT 0x31AE
+
 /* Chip ID */
 #define AR0234_REG_CHIP_ID		0x3000
 #define AR0234_CHIP_ID			0x0a56
 #define AR0234_CHIP_ID_MONO		0x1a56
 
-#define AR0234_REG_RESET          0x301A
+#define AR0234_REG_RESET		0x301A
 /* Bit 0 is reset */
 /* Bit 2 is stream on/off */
 #define AR0234_REG_RESET_RESET       0x00D9
 #define AR0234_REG_RESET_STREAM_OFF  0x2058
 #define AR0234_REG_RESET_STREAM_ON   0x205C
 
-/* External clock frequency is 24.0M */
-#define AR0234_FREQ_EXTCLK		24000000
-
+#define AR0234_FREQ_EXTCLK			24000000
 #define AR0234_FREQ_PIXCLK_2LANE	45000000
 #define AR0234_FREQ_PIXCLK_4LANE	90000000
+#define AR0234_FREQ_LINK_8BIT		360000000
+#define AR0234_FREQ_LINK_10BIT		450000000
 
-#define AR0234_FREQ_LINK_10BIT	450000000
-
-#define LINE_LENGTH_PCK			0x300C
-
-/* V_TIMING internal */
-#define AR0234_REG_VTS			0x300a
-#define AR0234_VTS_30FPS		0x04c4
-#define AR0234_VTS_60FPS		0x0dc6 //fixme
-#define AR0234_VTS_MAX			0xffff
-
-#define AR0234_VBLANK_MIN		16
-
-/*Frame Length Line*/
-#define AR0234_FLL_MIN			0x08a6
-#define AR0234_FLL_MAX			0xffff
-#define AR0234_FLL_STEP			1
-#define AR0234_FLL_DEFAULT		0x0c98
-
-/* HBLANK control - read only */
-#define AR0234_PPL_DEFAULT		2448
+#define AR0234_REG_LINE_LENGTH_PCK		0x300C
+#define AR0234_REG_FRAME_LENGTH_LINES	0x300A
+#define AR0234_FLL_MAX					0xFFFF
+#define AR0234_FLL_MIN					1220
+#define AR0234_LINE_LENGTH_PCK_DEF		612
 
 /* Exposure control */
 #define AR0234_REG_EXPOSURE_COARSE	0x3012
@@ -72,14 +59,13 @@
 #define AR0234_EXPOSURE_MIN		4
 #define AR0234_EXPOSURE_STEP		1
 #define AR0234_EXPOSURE_DEFAULT		0x640
-#define AR0234_EXPOSURE_MAX		65535
 
 /* Analog gain control */
-#define AR0234_REG_ANALOG_GAIN		0x3060
+#define AR0234_REG_ANALOG_GAIN	0x3060
 #define AR0234_ANA_GAIN_MIN		0
 #define AR0234_ANA_GAIN_MAX		232
-#define AR0234_ANA_GAIN_STEP		1
-#define AR0234_ANA_GAIN_DEFAULT		0x0
+#define AR0234_ANA_GAIN_STEP	1
+#define AR0234_ANA_GAIN_DEFAULT	0x0
 
 /* Digital gain control */
 #define AR0234_REG_DIGITAL_GAIN		0x305e
@@ -88,19 +74,19 @@
 #define AR0234_DGTL_GAIN_DEFAULT	0x0100
 #define AR0234_DGTL_GAIN_STEP		1
 
-#define AR0234_REG_ORIENTATION		0x3040
+#define AR0234_REG_ORIENTATION			0x3040
 #define AR0234_REG_ORIENTATION_HFLIP	BIT(14)
 #define AR0234_REG_ORIENTATION_VFLIP	BIT(15)
 
 #define AR0234_REG_OUTPUT_DEPTH		0x31AC
 
 /* Test Pattern Control */
-#define AR0234_REG_TEST_PATTERN		0x0600
-#define AR0234_TEST_PATTERN_DISABLE	0
+#define AR0234_REG_TEST_PATTERN			0x0600
+#define AR0234_TEST_PATTERN_DISABLE		0
 #define AR0234_TEST_PATTERN_SOLID_COLOR	1
 #define AR0234_TEST_PATTERN_COLOR_BARS	2
 #define AR0234_TEST_PATTERN_GREY_COLOR	3
-#define AR0234_TEST_PATTERN_PN9		4
+#define AR0234_TEST_PATTERN_PN9			4
 
 /* Test pattern colour components */
 #define AR0234_REG_TESTP_RED		0x0602
@@ -116,8 +102,8 @@
 #define AR0234_TESTP_GREENB_DEFAULT	0
 
 /* Helper macro for declaring ar0234 reg sequence */
-#define AR0234_REG_SEQ(_reg_array)                                      \
-	{                                                               \
+#define AR0234_REG_SEQ(_reg_array)                              \
+	{                                                           \
 		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
 	}
 
@@ -128,7 +114,7 @@ enum pad_types {
 };
 
 /* AR0234 native and active pixel array size. */
-#define AR0234_NATIVE_WIDTH		1484U
+#define AR0234_NATIVE_WIDTH			1484U
 #define AR0234_NATIVE_HEIGHT		856U
 #define AR0234_PIXEL_ARRAY_LEFT		6U
 #define AR0234_PIXEL_ARRAY_TOP		10U
@@ -158,8 +144,8 @@ struct ar0234_timing {
 };
 
 enum ar0234_lane_mode_id {
-	AR0234_LANE_MODE_ID_2 = 0,
-	AR0234_LANE_MODE_ID_4,
+	AR0234_LANE_MODE_ID_2LANE = 0,
+	AR0234_LANE_MODE_ID_4LANE,
 	AR0234_LANE_MODE_ID_AMOUNT,
 };
 
@@ -175,7 +161,6 @@ struct ar0234_format {
 	unsigned int width;
 	/* Frame height */
 	unsigned int height;
-
 	/* Analog crop rectangle. */
 	struct v4l2_rect crop;
 
@@ -241,11 +226,10 @@ static const struct ar0234_reg ar0234_mipi_config_24_900_10bit[] = {
 };
 
 static const struct ar0234_reg ar0234_reset[] = {
-	//[Reset]
-	{DELAY, 20 },
-	{AR0234_REG_RESET, AR0234_REG_RESET_RESET}, //RESET_REGISTER
-	{DELAY, 200 },
-	{ 0x301A, 0x2058 },	// RESET_REGISTER
+	{ DELAY, 20 },
+	{ AR0234_REG_RESET, AR0234_REG_RESET_RESET },
+	{ DELAY, 200 },
+	{ AR0234_REG_RESET, AR0234_REG_RESET_STREAM_OFF },
 };
 
 static const struct ar0234_reg common_init[] = {
@@ -717,7 +701,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	}
 	case V4L2_CID_VBLANK:
-		ret = ar0234_write_reg(ar0234, AR0234_REG_VTS,
+		ret = ar0234_write_reg(ar0234, AR0234_REG_FRAME_LENGTH_LINES,
 				       AR0234_REG_VALUE_16BIT,
 				       ar0234->mode.format->height + ctrl->val);
 		break;
@@ -1074,11 +1058,8 @@ static int ar0234_config_serial_format(struct ar0234 *ar0234)
 	// { 0x31AC, 0x0A0A },	// DATA_FORMAT_BITS
 
 	/* Set lane amount */
-	ret = ar0234_write_reg(ar0234, 0x31AE, AR0234_REG_VALUE_16BIT,
-		(0x0200 | ar0234->hw_config.num_data_lanes));
-	
-	// if (ret)
-	// 	return ret;
+	ret = ar0234_write_reg(ar0234, AR0234_REG_SERIAL_FORMAT,
+		AR0234_REG_VALUE_16BIT, (0x0200 | ar0234->hw_config.num_data_lanes));
 
 	return ret;
 }
@@ -1489,10 +1470,10 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 	/* Check the number of MIPI CSI2 data lanes */
 	switch (ep_cfg.bus.mipi_csi2.num_data_lanes) {
 	case 2:
-		hw_config->lane_mode = AR0234_LANE_MODE_ID_2;
+		hw_config->lane_mode = AR0234_LANE_MODE_ID_2LANE;
 		break;
 	case 4:
-		hw_config->lane_mode = AR0234_LANE_MODE_ID_4;
+		hw_config->lane_mode = AR0234_LANE_MODE_ID_4LANE;
 		break;
 	default:
 		ret = dev_err_probe(ar0234->dev, -EINVAL,
