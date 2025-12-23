@@ -29,6 +29,9 @@
 
 #define AR0234_REG_SERIAL_FORMAT 0x31AE
 
+/* Single format code for selected link frequency */
+#define AR0234_FMT_CODE_AMOUNT 1
+
 /* Chip ID */
 #define AR0234_REG_CHIP_ID		0x3000
 #define AR0234_CHIP_ID			0x0a56
@@ -305,13 +308,8 @@ static const char * const ar0234_supply_name[] = {
 
 static const s64 link_freq[] = {
 	AR0234_FREQ_LINK_10BIT,
+	AR0234_FREQ_LINK_8BIT,
 };
-
-/*
-* There is an inherent assumption that there will be the same number of codes
-* for the Bayer and monochrome sensors
-*/
-#define NUM_CODES ARRAY_SIZE(bayer_codes)
 
 /* Format configs */
 static const struct ar0234_format ar0234_formats[] = {
@@ -686,7 +684,7 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (code->pad == IMAGE_PAD) {
-		if (code->index >= NUM_CODES)
+		if (code->index >= AR0234_FMT_CODE_AMOUNT)
 			return -EINVAL;
 
 		code->code = ar0234_get_format_code(ar0234);
