@@ -28,6 +28,34 @@
 		};
 	};
 
+	fragment@3 {
+		target = <&cam_endpoint>;
+		__overlay__ {
+			data-lanes = <1 2>;
+		};
+	};
+
+	fragment@4 {
+		target = <&cam_endpoint>;
+		__dormant__ {
+			data-lanes = <1 2 3 4>;
+		};		
+	};
+
+	fragment@5 {
+		target = <&csi_ep>;
+		__overlay__ {
+			data-lanes = <1 2>;
+		};
+	};
+
+	fragment@6 {
+		target = <&csi_ep>;
+		__dormant__ {
+			data-lanes = <1 2 3 4>;
+		};
+	};
+
 	i2c_frag: fragment@100 {
 		target = <&i2c_csi_dsi>;
 		__overlay__ {
@@ -54,7 +82,6 @@
 					cam_endpoint: endpoint {
 						remote-endpoint = <&csi1_ep>;
 						clock-lanes = <0>;
-						data-lanes = <1 2>;
 						clock-noncontinuous;
 						link-frequencies =
 							/bits/ 64 <450000000>;
@@ -73,7 +100,6 @@
 				csi_ep: endpoint {
 					remote-endpoint = <&cam_endpoint>;
 					clock-lanes = <0>;
-					data-lanes = <1 2>;
 					clock-noncontinuous;
 				};
 			};
