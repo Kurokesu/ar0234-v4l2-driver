@@ -1217,12 +1217,10 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	 * in the ar0234_set_framing_limits() call below.
 	 */
 	ar0234->vblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
-					   V4L2_CID_VBLANK, 0,
-					   0xFFFF, 1, 0);
+					   V4L2_CID_VBLANK, 0, 0xFFFF, 1, 0);
 
 	ar0234->hblank = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
-					   V4L2_CID_HBLANK, 0, 0xFFFF, 1,
-					   0);
+					   V4L2_CID_HBLANK, 0, 0xFFFF, 1, 0);
 	if (ar0234->hblank)
 		ar0234->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
