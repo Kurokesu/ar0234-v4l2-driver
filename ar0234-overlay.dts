@@ -84,7 +84,7 @@
 						clock-lanes = <0>;
 						clock-noncontinuous;
 						link-frequencies =
-							/bits/ 64 <450000000>;
+							/bits/ 64 <450000000 360000000>;
 					};
 				};
 			};
@@ -123,6 +123,7 @@
 			   <&clk_frag>, "target:0=",<&cam0_clk>,
 			   <&cam_node>, "clocks:0=",<&cam0_clk>,
 			   <&cam_node>, "vana-supply:0=",<&cam0_reg>;
+		link-frequency = <&cam_endpoint>,"link-frequencies#0";
 	};
 };
 
