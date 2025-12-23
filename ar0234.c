@@ -138,11 +138,6 @@ struct ar0234_reg_sequence {
 	const struct ar0234_reg *regs;
 };
 
-struct ar0234_timing {
-	unsigned int line_length_pck;
-	unsigned int frame_length_lines_min;
-};
-
 enum ar0234_lane_mode_id {
 	AR0234_LANE_MODE_ID_2LANE = 0,
 	AR0234_LANE_MODE_ID_4LANE,
@@ -164,15 +159,11 @@ struct ar0234_format {
 	/* Analog crop rectangle. */
 	struct v4l2_rect crop;
 
-	struct ar0234_timing timing[AR0234_LANE_MODE_ID_AMOUNT]
-				   [AR0234_BIT_DEPTH_ID_AMOUNT];
-
 	struct ar0234_reg_sequence reg_sequence;
 };
 
 struct ar0234_mode {
 	struct ar0234_format const *format;
-	enum ar0234_bit_depth_id bit_depth;
 };
 
 #define VT_PIX_CLK_DIV     0x302A
@@ -334,9 +325,9 @@ static const s64 link_freq[] = {
 #define NUM_CODES ARRAY_SIZE(bayer_codes)
 
 /* Format configs */
-static const struct ar0234_format ar0234_formats_24_900[] = {
+static const struct ar0234_format ar0234_formats[] = {
 	{
-		/* 1280x800 60fps mode */
+		/* 1280x1200 mode */
 		.width = 1920,
 		.height = 1200,
 		.crop = {
@@ -345,28 +336,10 @@ static const struct ar0234_format ar0234_formats_24_900[] = {
 			.width = 1920,
 			.height = 1200
 		},
-		.timing = {
-			[AR0234_LANE_MODE_ID_2][AR0234_BIT_DEPTH_ID_8BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_2][AR0234_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_4][AR0234_BIT_DEPTH_ID_8BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_4][AR0234_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-		},
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
 	},
 	{
-		/* Cropped 1280x720 30fps mode */
+		/* Cropped 1280x720 mode */
 		.width = 1280,
 		.height = 800,
 		.crop = {
@@ -374,24 +347,6 @@ static const struct ar0234_format ar0234_formats_24_900[] = {
 			.top = 200,
 			.width = 1280,
 			.height = 800
-		},
-		.timing = {
-			[AR0234_LANE_MODE_ID_2][AR0234_BIT_DEPTH_ID_8BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_2][AR0234_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_4][AR0234_BIT_DEPTH_ID_8BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
-			[AR0234_LANE_MODE_ID_4][AR0234_BIT_DEPTH_ID_10BIT] = {
-				.line_length_pck = 612,
-				.frame_length_lines_min = AR0234_VTS_30FPS,
-			},
 		},
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1280x800_config),
 	},
@@ -867,51 +822,22 @@ static int ar0234_get_pad_format(struct v4l2_subdev *sd,
 	return ret;
 }
 
-static int ar0234_get_bit_depth_id(struct ar0234 *ar0234, u32 code,
-				   enum ar0234_bit_depth_id *bit_depth_id)
-{
-	enum ar0234_bit_depth_id i;
-
-	if (!bit_depth_id)
-		return -EINVAL;
-
-	u32 const *codes = ar0234_get_codes(ar0234);
-
-	for (i = 0; i < AR0234_BIT_DEPTH_ID_AMOUNT; i++)
-		if (codes[i] == code)
-			break;
-
-	if (i >= AR0234_BIT_DEPTH_ID_AMOUNT)
-		return -ENOENT;
-
-	*bit_depth_id = i;
-
-	return 0;
-}
-
-static struct ar0234_timing const *ar0234_get_timing(struct ar0234 *ar0234)
-{
-	return &ar0234->mode.format->timing[ar0234->hw_config.lane_mode]
-				    [ar0234->mode.bit_depth];
-}
-
 static void ar0234_set_framing_limits(struct ar0234 *ar0234)
 {
-	int hblank;
+	int hblank, vblank_min;
 	const struct ar0234_format *format = ar0234->mode.format;
-	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
 
 	/* Update limits and set FPS to default */
+	vblank_min = AR0234_FLL_MIN - format->height;
 	__v4l2_ctrl_modify_range(
-		ar0234->vblank, timing->frame_length_lines_min - format->height,
-		AR0234_VTS_MAX - format->height, ar0234->vblank->step,
-		timing->frame_length_lines_min - format->height);
+		ar0234->vblank, vblank_min,
+		AR0234_FLL_MAX - format->height,
+		ar0234->vblank->step, vblank_min);
 
 	/* Setting this will adjust the exposure limits as well */
-	__v4l2_ctrl_s_ctrl(ar0234->vblank,
-			   timing->frame_length_lines_min - format->height);
+	__v4l2_ctrl_s_ctrl(ar0234->vblank, vblank_min);
 
-	hblank = timing->line_length_pck - format->width;
+	hblank = AR0234_LINE_LENGTH_PCK_DEF - format->width;
 	__v4l2_ctrl_modify_range(ar0234->hblank, hblank, hblank, 1, hblank);
 	__v4l2_ctrl_s_ctrl(ar0234->hblank, hblank);
 }
@@ -945,8 +871,6 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 			   ar0234->fmt.code != fmt->format.code) {
 			ar0234->fmt = fmt->format;
 			ar0234->mode.format = format;
-			ar0234_get_bit_depth_id(ar0234, fmt->format.code,
-						&ar0234->mode.bit_depth);
 			ar0234_set_framing_limits(ar0234);
 		}
 	} else {
@@ -1299,9 +1223,7 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	struct v4l2_fwnode_device_properties props;
 	struct v4l2_ctrl_handler *ctrl_hdlr;
-	int exposure_max, exposure_def;
 	struct v4l2_ctrl *ctrl;
-	struct ar0234_timing const *timing = ar0234_get_timing(ar0234);
 	unsigned int pixel_rate;
 	int i, ret;
 
@@ -1337,14 +1259,10 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	if (ar0234->hblank)
 		ar0234->hblank->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
-	exposure_max = timing->frame_length_lines_min - AR0234_EXPOSURE_MIN;
-	exposure_def = (exposure_max < AR0234_EXPOSURE_DEFAULT) ?
-		exposure_max : AR0234_EXPOSURE_DEFAULT;
 	ar0234->exposure = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 						V4L2_CID_EXPOSURE,
-						AR0234_EXPOSURE_MIN, exposure_max,
-						AR0234_EXPOSURE_STEP,
-						exposure_def);
+						AR0234_EXPOSURE_MIN, 0xFFFF,
+						AR0234_EXPOSURE_STEP, AR0234_EXPOSURE_MIN);
 
 	v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops, V4L2_CID_ANALOGUE_GAIN,
 			AR0234_ANA_GAIN_MIN, AR0234_ANA_GAIN_MAX,
