@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
-* A V4L2 driver for OnSemi AR0234 cameras.
-* Copyright (C) 2021, Raspberry Pi (Trading) Ltd
-*
-* Based on Sony imx219 camera driver
-* Copyright (C) 2019, Raspberry Pi (Trading) Ltd
-*
-*/
+ * A V4L2 driver for OnSemi AR0234 cameras.
+ *
+ * Copyright (C) 2021, Raspberry Pi (Trading) Ltd
+ * Copyright (C) 2025, UAB Kurokesu
+ *
+ * Based on Sony imx219 camera driver
+ * Copyright (C) 2019, Raspberry Pi (Trading) Ltd
+ *
+ */
 
 #include <linux/clk.h>
 #include <linux/delay.h>
@@ -1676,5 +1678,6 @@ static struct i2c_driver ar0234_i2c_driver = {
 module_i2c_driver(ar0234_i2c_driver);
 
 MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com");
+MODULE_AUTHOR("Danius Kalvaitis <danius@kurokesu.com");
 MODULE_DESCRIPTION("OnSemi AR0234 sensor driver");
 MODULE_LICENSE("GPL");
