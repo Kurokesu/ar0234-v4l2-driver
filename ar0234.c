@@ -176,25 +176,19 @@ struct ar0234_mode {
 
 #define DELAY 0xffff	/* Delay for specified number of ms */
 
-static const struct ar0234_reg ar0234_pll_config_24_720_8bit[] = {
+/*
+ * PLL config for:
+ * External clock - 24MHz
+ * Link frequency - 360MHz
+ * Bit depth      - 8bit
+ */
+static const struct ar0234_reg ar0234_pll_config_24_360_8bit[] = {
 	{ 0x302A, 0x0008 },	// VT_PIX_CLK_DIV
 	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
 	{ 0x302E, 0x0001 },	// PRE_PLL_CLK_DIV
 	{ 0x3030, 0x001E },	// PLL_MULTIPLIER
 	{ 0x3036, 0x0008 },	// OP_PIX_CLK_DIV
 	{ 0x3038, 0x0002 },	// OP_SYS_CLK_DIV
-};
-
-static const struct ar0234_reg ar0234_pll_config_24_900_10bit[] = {
-	{ 0x302A, 0x0005 },	// VT_PIX_CLK_DIV
-	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
-	{ 0x302E, 0x0008 },	// PRE_PLL_CLK_DIV
-	{ 0x3030, 0x0096 },	// PLL_MULTIPLIER
-	{ 0x3036, 0x000A },	// OP_PIX_CLK_DIV
-	{ 0x3038, 0x0001 },	// OP_SYS_CLK_DIV
-};
-
-static const struct ar0234_reg ar0234_mipi_config_24_720_8bit[] = {
 	{ 0x31B0, 0x0080 },	// FRAME_PREAMBLE
 	{ 0x31B2, 0x005C },	// LINE_PREAMBLE
 	{ 0x31B4, 0x5248 },	// MIPI_TIMING_0
@@ -205,7 +199,19 @@ static const struct ar0234_reg ar0234_mipi_config_24_720_8bit[] = {
 	{ 0x3354, 0x002A }, // MIPI_CNTRL
 };
 
-static const struct ar0234_reg ar0234_mipi_config_24_900_10bit[] = {
+/*
+ * PLL config for:
+ * External clock - 24MHz
+ * Link frequency - 450MHz
+ * Bit depth      - 10bit
+ */
+static const struct ar0234_reg ar0234_pll_config_24_450_10bit[] = {
+	{ 0x302A, 0x0005 },	// VT_PIX_CLK_DIV
+	{ 0x302C, 0x0001 },	// VT_SYS_CLK_DIV
+	{ 0x302E, 0x0008 },	// PRE_PLL_CLK_DIV
+	{ 0x3030, 0x0096 },	// PLL_MULTIPLIER
+	{ 0x3036, 0x000A },	// OP_PIX_CLK_DIV
+	{ 0x3038, 0x0001 },	// OP_SYS_CLK_DIV
 	{ 0x31B0, 0X0082 },	// FRAME_PREAMBLE
 	{ 0x31B2, 0X005C },	// LINE_PREAMBLE
 	{ 0x31B4, 0X4248 },	// MIPI_TIMING_0
@@ -251,26 +257,19 @@ static const struct ar0234_reg common_init[] = {
 };
 
 static const struct ar0234_reg ar0234_1920x1200_config[] = {
-	// [1920x1200 60fps]
-	/* Cropping / output size */
 	{ 0x3002, 0x0008 },	// Y_ADDR_START
 	{ 0x3004, 0x0008 },	// X_ADDR_START
 	{ 0x3006, 0x04b7 },	// Y_ADDR_END
 	{ 0x3008, 0x0787 },	// X_ADDR_END
-	{ LINE_LENGTH_PCK, 0x0264 },	// LINE_LENGTH_PCK
 	{ 0x30A2, 0x0001 },	// X_ODD_INC
 	{ 0x30A6, 0x0001 },	// Y_ODD_INC
-
-//	{0x3028, 0x0010}, //ROW_SPEED
 };
 
 static const struct ar0234_reg ar0234_1280x800_config[] = {
-	// [1280x800 60fps]
 	{ 0x3002, 0x00d0 },	// Y_ADDR_START
 	{ 0x3004, 0x0148 },	// X_ADDR_START
 	{ 0x3006, 0x03ef },	// Y_ADDR_END
 	{ 0x3008, 0x0647 },	// X_ADDR_END
-	{ LINE_LENGTH_PCK, 0x0264 },	// LINE_LENGTH_PCK - CHECKME
 	{ 0x30A2, 0x0001 },	// X_ODD_INC
 	{ 0x30A6, 0x0001 },	// Y_ODD_INC
 };
@@ -303,16 +302,6 @@ static const char * const ar0234_supply_name[] = {
 
 #define AR0234_XCLR_MIN_DELAY_US	6200
 #define AR0234_XCLR_DELAY_RANGE_US	1000
-
-static const u32 bayer_codes[] = {
-	MEDIA_BUS_FMT_SGRBG10_1X10,
-	MEDIA_BUS_FMT_SGRBG8_1X8,
-};
-
-static const u32 mono_codes[] = {
-	MEDIA_BUS_FMT_Y10_1X10,
-	MEDIA_BUS_FMT_Y8_1X8,
-};
 
 static const s64 link_freq[] = {
 	AR0234_FREQ_LINK_10BIT,
@@ -352,32 +341,39 @@ static const struct ar0234_format ar0234_formats[] = {
 	},
 };
 
+struct ar0234_fmt_codes {
+	u32 bayer;
+	u32 mono;
+};
+
 struct ar0234_pll_config {
 	s64 freq_link;
 	u64 freq_extclk;
-	u32 freq_pixclk[AR0234_LANE_MODE_ID_AMOUNT];
-
-	unsigned int formats_amount;
-	struct ar0234_format const *formats;
-
 	struct ar0234_reg_sequence regs_pll;
-	struct ar0234_reg_sequence regs_mipi[AR0234_BIT_DEPTH_ID_AMOUNT];
+	struct ar0234_fmt_codes fmt_codes;
 };
 
-static const struct ar0234_pll_config ar0234_pll_config = {
-	.freq_link = AR0234_FREQ_LINK_10BIT,
-	.freq_extclk = AR0234_FREQ_EXTCLK,
-	.freq_pixclk = {
-		[AR0234_LANE_MODE_ID_2] = AR0234_FREQ_PIXCLK_2LANE,
-		[AR0234_LANE_MODE_ID_4] = AR0234_FREQ_PIXCLK_4LANE,
+static const struct ar0234_pll_config ar0234_pll_configs[] = {
+	{
+		.freq_link = AR0234_FREQ_LINK_8BIT,
+		.freq_extclk = AR0234_FREQ_EXTCLK,
+		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_360_8bit),
+		.fmt_codes.bayer = MEDIA_BUS_FMT_SGRBG8_1X8,
+		.fmt_codes.mono = MEDIA_BUS_FMT_Y8_1X8,
 	},
-	.formats = ar0234_formats_24_900,
-	.formats_amount = ARRAY_SIZE(ar0234_formats_24_900),
-	.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_900_10bit),
-	.regs_mipi = {
-		[AR0234_BIT_DEPTH_ID_8BIT] = AR0234_REG_SEQ(ar0234_mipi_config_24_720_8bit),
-		[AR0234_BIT_DEPTH_ID_10BIT] = AR0234_REG_SEQ(ar0234_mipi_config_24_900_10bit),
+	{
+		.freq_link = AR0234_FREQ_LINK_10BIT,
+		.freq_extclk = AR0234_FREQ_EXTCLK,
+		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_450_10bit),
+		.fmt_codes.bayer = MEDIA_BUS_FMT_SGRBG10_1X10,
+		.fmt_codes.mono = MEDIA_BUS_FMT_Y10_1X10,
 	},
+};
+
+/* Pixel clock frequencies are based on lane amount */
+static const u32 ar0234_freq_pixclk[] = {
+	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_2LANE,
+	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_4LANE,
 };
 
 struct ar0234_hw_config {
@@ -391,6 +387,7 @@ struct ar0234_hw_config {
 struct ar0234 {
 	struct device *dev;
 	struct ar0234_hw_config hw_config;
+	struct ar0234_pll_config const *pll_config;
 
 	struct v4l2_subdev sd;
 	struct media_pad pad[NUM_PADS];
@@ -504,30 +501,17 @@ static int ar0234_write_regs(struct ar0234 *ar0234,
 	return 0;
 }
 
-static const u32 *ar0234_get_codes(struct ar0234 *ar0234)
+static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 {
-	if (ar0234->monochrome)
-		return mono_codes;
-	else
-		return bayer_codes;
-}
+	u32 code;
 
-/* Get bayer order based on flip setting. */
-static u32 ar0234_get_format_code(struct ar0234 *ar0234, u32 code)
-{
-	const u32 *codes = ar0234_get_codes(ar0234);
-	unsigned int i;
+	if (ar0234->monochrome) {
+		code = ar0234->pll_config->fmt_codes.mono;
+	} else {
+		code = ar0234->pll_config->fmt_codes.bayer;
+	}
 
-	lockdep_assert_held(&ar0234->mutex);
-
-	for (i = 0; i < NUM_CODES; i++)
-		if (codes[i] == code)
-			break;
-
-	if (i >= NUM_CODES)
-		i = 0;
-
-	return codes[i];
+	return code;
 }
 
 static void ar0234_set_default_format(struct ar0234 *ar0234)
@@ -535,7 +519,7 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 	struct v4l2_mbus_framefmt *fmt;
 
 	fmt = &ar0234->fmt;
-	fmt->code = ar0234_get_codes(ar0234)[0];
+	fmt->code = ar0234_get_format_code(ar0234);
 
 	fmt->colorspace = V4L2_COLORSPACE_SRGB;
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
@@ -543,12 +527,11 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 							fmt->colorspace,
 							fmt->ycbcr_enc);
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
-	fmt->width = ar0234_formats_24_900[0].width;
-	fmt->height = ar0234_formats_24_900[0].height;
+	fmt->width = ar0234_formats[0].width;
+	fmt->height = ar0234_formats[0].height;
 	fmt->field = V4L2_FIELD_NONE;
 
-	ar0234->mode.format = &ar0234_formats_24_900[0];
-	ar0234->mode.bit_depth = AR0234_BIT_DEPTH_ID_10BIT;
+	ar0234->mode.format = &ar0234_formats[0];
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -563,9 +546,9 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	mutex_lock(&ar0234->mutex);
 
 	/* Initialize try_fmt for the image pad */
-	try_fmt_img->width = ar0234_formats_24_900[0].width;
-	try_fmt_img->height = ar0234_formats_24_900[0].height;
-	try_fmt_img->code = ar0234_get_format_code(ar0234, 0);
+	try_fmt_img->width = ar0234_formats[0].width;
+	try_fmt_img->height = ar0234_formats[0].height;
+	try_fmt_img->code = ar0234_get_format_code(ar0234);
 	try_fmt_img->field = V4L2_FIELD_NONE;
 
 	/* Initialize try_fmt for the embedded metadata pad */
@@ -698,7 +681,6 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 				struct v4l2_subdev_mbus_code_enum *code)
 {
 	struct ar0234 *ar0234 = to_ar0234(sd);
-	const u32 *codes = ar0234_get_codes(ar0234);
 
 	if (code->pad >= NUM_PADS)
 		return -EINVAL;
@@ -707,7 +689,7 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 		if (code->index >= NUM_CODES)
 			return -EINVAL;
 
-		code->code = codes[code->index];
+		code->code = ar0234_get_format_code(ar0234);
 	} else {
 		if (code->index > 0)
 			return -EINVAL;
@@ -728,15 +710,15 @@ static int ar0234_enum_frame_size(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (fse->pad == IMAGE_PAD) {
-		if (fse->index >= ARRAY_SIZE(ar0234_formats_24_900))
+		if (fse->index >= ARRAY_SIZE(ar0234_formats))
 			return -EINVAL;
 
-		if (fse->code != ar0234_get_format_code(ar0234, fse->code))
+		if (fse->code != ar0234_get_format_code(ar0234))
 			return -EINVAL;
 
-		fse->min_width = ar0234_formats_24_900[fse->index].width;
+		fse->min_width = ar0234_formats[fse->index].width;
 		fse->max_width = fse->min_width;
-		fse->min_height = ar0234_formats_24_900[fse->index].height;
+		fse->min_height = ar0234_formats[fse->index].height;
 		fse->max_height = fse->min_height;
 	} else {
 		if (fse->code != MEDIA_BUS_FMT_SENSOR_DATA || fse->index > 0)
@@ -791,15 +773,14 @@ static int __ar0234_get_pad_format(struct ar0234 *ar0234,
 			v4l2_subdev_state_get_format(sd_state, fmt->pad);
 		/* update the code which could change due to vflip or hflip: */
 		try_fmt->code = fmt->pad == IMAGE_PAD ?
-				ar0234_get_format_code(ar0234, try_fmt->code) :
+				ar0234_get_format_code(ar0234) :
 				MEDIA_BUS_FMT_SENSOR_DATA;
 		fmt->format = *try_fmt;
 	} else {
 		if (fmt->pad == IMAGE_PAD) {
 			ar0234_update_image_pad_format(
 				ar0234, ar0234->mode.format, fmt);
-			fmt->format.code = ar0234_get_format_code(
-				ar0234, ar0234->fmt.code);
+			fmt->format.code = ar0234_get_format_code(ar0234);
 		} else {
 			ar0234_update_metadata_pad_format(fmt);
 		}
@@ -856,16 +837,14 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 	mutex_lock(&ar0234->mutex);
 
 	if (fmt->pad == IMAGE_PAD) {
-		fmt->format.code = ar0234_get_format_code(ar0234,
-							fmt->format.code);
+		fmt->format.code = ar0234_get_format_code(ar0234);
 
 		format = v4l2_find_nearest_size(
-			ar0234_formats_24_900, ARRAY_SIZE(ar0234_formats_24_900), width,
+			ar0234_formats, ARRAY_SIZE(ar0234_formats), width,
 			height, fmt->format.width, fmt->format.height);
 		ar0234_update_image_pad_format(ar0234, format, fmt);
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
-			framefmt = v4l2_subdev_state_get_format(sd_state,
-								fmt->pad);
+			framefmt = v4l2_subdev_state_get_format(sd_state, fmt->pad);
 			*framefmt = fmt->format;
 		} else if (ar0234->mode.format != format ||
 			   ar0234->fmt.code != fmt->format.code) {
@@ -958,20 +937,8 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 
 static int ar0234_config_pll(struct ar0234 *ar0234)
 {
-	int ret;
-
-	ret = ar0234_write_regs(ar0234, ar0234_pll_config.regs_pll.regs,
-		ar0234_pll_config.regs_pll.amount);
-
-	if (ret)
-		return ret;
-
-	// TODO
-	ret = ar0234_write_regs(ar0234, 
-		ar0234_pll_config.regs_mipi[AR0234_BIT_DEPTH_ID_10BIT].regs,
-		ar0234_pll_config.regs_mipi[AR0234_BIT_DEPTH_ID_10BIT].amount);
-
-	return ret;
+	return ar0234_write_regs(ar0234, ar0234->pll_config->regs_pll.regs,
+		ar0234->pll_config->regs_pll.amount);
 }
 
 static int ar0234_config_serial_format(struct ar0234 *ar0234)
@@ -1236,7 +1203,7 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	ctrl_hdlr->lock = &ar0234->mutex;
 
 	/* By default, PIXEL_RATE is read only */
-	pixel_rate = ar0234_pll_config.freq_pixclk[ar0234->hw_config.lane_mode];
+	pixel_rate = ar0234_freq_pixclk[ar0234->hw_config.lane_mode];
 	ctrl = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 						V4L2_CID_PIXEL_RATE,
 						pixel_rate,
@@ -1410,22 +1377,29 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 		goto error_out;
 	}
 
-	if (ep_cfg.nr_of_link_frequencies != 1 ||
-	    ep_cfg.link_frequencies[0] != AR0234_FREQ_LINK_10BIT) {
-		dev_err(ar0234->dev, "Link frequency not supported: %lld\n",
-			ep_cfg.link_frequencies[0]);
-		ret = -EINVAL;
-		goto error_out;
-	}
-
 	extclk_frequency = clk_get_rate(hw_config->extclk);
 
-	if (extclk_frequency != AR0234_FREQ_EXTCLK) {
-		dev_err(ar0234->dev, "extclk frequency not supported: %lu Hz\n",
-			extclk_frequency);
+	/*
+	 * Check if there exists a sensor mode defined for current EXTCLK
+	 * and given lane rate.
+	 */
+	for (i = 0; i < ARRAY_SIZE(ar0234_pll_configs); i++) {
+		if ((ar0234_pll_configs[i].freq_extclk == extclk_frequency) &&
+			(ar0234_pll_configs[i].freq_link == 
+			 ep_cfg.link_frequencies[0]))
+			break;
+	}
+
+	if (i == ARRAY_SIZE(ar0234_pll_configs)) {
+		dev_err(ar0234->dev,
+			"no valid sensor mode defined for EXTCLK %luHz\
+			 and link frequency %lluHz\n",
+			extclk_frequency, ep_cfg.link_frequencies[0]);
 		ret = -EINVAL;
 		goto error_out;
 	}
+
+	ar0234->pll_config = &ar0234_pll_configs[i];
 
 	dev_info(ar0234->dev,
 		"extclk: %luHz, link_frequency: %lluHz, lanes: %d\n",
