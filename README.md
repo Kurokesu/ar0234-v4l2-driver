@@ -91,13 +91,7 @@ To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
-> [!TIP]
-> You can combine options. Example: cam0 + 4 lanes + 360 MHz:
-> ```
-> dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
-> ```
-
-## Sensor configurations
+### Sensor configurations
 
 | link frequency | data rate per lane | lanes | bit depth | width | height | maximum framerate |
 |---|---|---|---|---|---|---|
@@ -109,6 +103,12 @@ dtoverlay=ar0234,link-frequency=360000000
 | 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
 | 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
+
+> [!TIP]
+> You can combine options. Example: cam0 + 4 lanes + 360 MHz:
+> ```
+> dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
+> ```
 
 ## libcamera Support
 
