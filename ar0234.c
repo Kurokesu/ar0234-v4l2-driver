@@ -1374,19 +1374,23 @@ static int ar0234_probe(struct i2c_client *client)
 		return -EINVAL;
 
 	/*
-	* The sensor must be powered for ar0234_identify_module()
-	* to be able to read the CHIP_ID register
-	*/
+	 * Enable power management. The driver supports runtime PM, but needs to
+	 * work when runtime PM is disabled in the kernel. To that end, power
+	 * the sensor on manually here, identify it, and fully initialize it.
+	 */
 	ret = ar0234_power_on(ar0234->dev);
 	if (ret)
 		return ret;
 
+	pm_runtime_set_active(ar0234->dev);
+	pm_runtime_get_noresume(ar0234->dev);
+	pm_runtime_enable(ar0234->dev);
+	pm_runtime_set_autosuspend_delay(ar0234->dev, 1000);
+	pm_runtime_use_autosuspend(ar0234->dev);
+
 	ret = ar0234_identify_module(ar0234);
 	if (ret)
 		goto error_power_off;
-
-	/* Set default mode to max resolution */
-	ar0234->mode.format = &ar0234_formats_24_900[0];
 
 	/* sensor doesn't enter LP-11 state upon power up until and unless
 	* streaming is started, so upon power up switch the modes to:
@@ -1404,6 +1408,9 @@ static int ar0234_probe(struct i2c_client *client)
 	if (ret < 0)
 		goto error_power_off;
 	usleep_range(100, 110);
+
+	/* Initialize default format */
+	ar0234_set_default_format(ar0234);
 
 	ret = ar0234_init_controls(ar0234);
 	if (ret)
@@ -1435,10 +1442,13 @@ static int ar0234_probe(struct i2c_client *client)
 		goto error_media_entity;
 	}
 
-	/* Enable runtime PM and turn off the device */
-	pm_runtime_set_active(ar0234->dev);
-	pm_runtime_enable(ar0234->dev);
-	pm_runtime_idle(ar0234->dev);
+	/*
+	 * Finally, enable autosuspend and decrease the usage count. The device
+	 * will get suspended after the autosuspend delay, turning the power
+	 * off.
+	 */
+	pm_runtime_mark_last_busy(ar0234->dev);
+	pm_runtime_put_autosuspend(ar0234->dev);
 
 	return 0;
 
@@ -1449,6 +1459,8 @@ error_handler_free:
 	ar0234_free_controls(ar0234);
 
 error_power_off:
+	pm_runtime_disable(ar0234->dev);
+	pm_runtime_put_noidle(ar0234->dev);
 	ar0234_power_off(ar0234->dev);
 
 	return ret;
