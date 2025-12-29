@@ -908,26 +908,6 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 	return -EINVAL;
 }
 
-static int ar0234_config_pll(struct ar0234 *ar0234)
-{
-	return ar0234_write_regs(ar0234, ar0234->pll_config->regs_pll.regs,
-		ar0234->pll_config->regs_pll.amount);
-}
-
-static int ar0234_config_serial_format(struct ar0234 *ar0234)
-{
-	int ret;
-
-	// TODO
-	// { 0x31AC, 0x0A0A },	// DATA_FORMAT_BITS
-
-	/* Set lane amount */
-	ret = ar0234_write_reg(ar0234, AR0234_REG_SERIAL_FORMAT,
-		AR0234_REG_VALUE_16BIT, (0x0200 | ar0234->hw_config.num_data_lanes));
-
-	return ret;
-}
-
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
@@ -943,17 +923,19 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	}
 
 	/* PLL and MIPI config */
-	ret = ar0234_config_pll(ar0234);
+	ret = ar0234_write_regs(ar0234, ar0234->pll_config->regs_pll.regs,
+		ar0234->pll_config->regs_pll.amount);
 	if (ret) {
-		dev_err(&client->dev, "%s failed to configure pll settings\n",
+		dev_err(&client->dev, "%s failed to configure pll/mipi settings\n",
 			__func__);
 		return ret;
 	}
 
-	/* Serial format */
-	ret = ar0234_config_serial_format(ar0234);
+	/* Configure lane amount */
+	ret = ar0234_write_reg(ar0234, AR0234_REG_SERIAL_FORMAT,
+		AR0234_REG_VALUE_16BIT, (0x0200 | ar0234->hw_config.num_data_lanes));
 	if (ret) {
-		dev_err(&client->dev, "%s failed to configure serial format\n",
+		dev_err(&client->dev, "%s failed to configure lane amount\n",
 			__func__);
 		return ret;
 	}
