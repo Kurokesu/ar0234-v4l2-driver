@@ -54,13 +54,61 @@ Remember to reboot your system for the changes to take effect.
 
 ## dtoverlay options
 
+The `ar0234` overlay supports comma-separated options to override defaults:
+
+| option | description | default |
+|--------|-------------|----------|
+| `cam0` | Use cam0 port instead of cam1 | cam1 |
+| `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
+| `link-frequency=<Hz>` | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
+
 ### cam0
 
-If the camera is attached to cam0 port, append the dtoverlay with `,cam0` like this:  
+If the camera is connected to the cam0 port, append `,cam0`:
+
 ```
-camera_auto_detect=0
 dtoverlay=ar0234,cam0
 ```
+
+### 4lane
+
+To enable 4-lane MIPI CSI-2, append `,4lane`:
+
+```
+dtoverlay=ar0234,4lane
+```
+
+> [!WARNING]
+> Before using `4lane`, confirm your selected camera port (cam0 or cam1) actually has 4 lanes wired on your Raspberry Pi and carrier board. Not all carrier boards provide 4-lane CSI on both ports.
+
+### link-frequency
+
+This driver supports link frequencies of 450 MHz (default) and 360 MHz. Due to the sensor PLL scheme, you must use 360 MHz to enable 8-bit output modes; otherwise output stays at 10-bit.
+
+To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
+
+```
+dtoverlay=ar0234,link-frequency=360000000
+```
+
+> [!TIP]
+> You can combine options. Example: cam0 + 4 lanes + 360 MHz:
+> ```
+> dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
+> ```
+
+## Sensor configurations
+
+| link frequency | data rate per lane | lanes | bit depth | width | height | maximum framerate |
+|---|---|---|---|---|---|---|
+| 360MHz | 720 Mbps | 2 | 8 | 1280 | 800 | 60 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 1280 | 800 | 60 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 1280 | 800 | 120 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 1280 | 800 | 120 fps |
+| 360MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
 ## libcamera Support
 
@@ -160,7 +208,7 @@ sudo meson install -C build
 > ```
 
 #### Verify the rpicam-apps Build
-Verify that `rpicam-apps` has been rebuilt correctly by checking the version:
+Verify that `rpicam-apps` was rebuilt correctly by checking the version:
 
 ```bash
 rpicam-hello --version
@@ -173,8 +221,10 @@ rpicam-apps capabilites: egl:1 qt:1 drm:1 libav:1
 libcamera build: v0.4.0
 ```
 
-### Verify that ar0234 is Being Detected Correctly
-Do not forget to reboot!
+### Verify that `ar0234` is detected
+
+Reboot to apply the changes:
+
 ```bash
 sudo reboot
 ```
@@ -184,15 +234,14 @@ Run the following command to list available cameras:
 rpicam-hello --list-cameras
 ```
 
-You should see output similar to this:
+You should see output similar to this (depending on your link-frequency and lane count):
+
 ```
 Available cameras
 -----------------
-0 : ar0234 [1920x1200 10-bit GRBG] (/base/soc/i2c0mux/i2c@0/ar0234@10)
-   Modes: 'SGRBG10_CSI2P' : 1280x800 [90.11 fps - (314, 190)/1280x800 crop]
-                            1920x1200 [60.47 fps - (0, 0)/1920x1200 crop]
-          'SGRBG8' : 1280x800 [90.11 fps - (314, 190)/1280x800 crop]
-                     1920x1200 [60.47 fps - (0, 0)/1920x1200 crop]
+0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0234@10)
+    Modes: 'SGRBG10_CSI2P' : 1280x800 [120.54 fps - (314, 190)/1280x800 crop]
+                             1920x1200 [120.54 fps - (0, 0)/1920x1200 crop]
 ```
 
 ## Special Thanks
@@ -200,4 +249,4 @@ Available cameras
 Special thanks to:
 - [6by9](https://github.com/6by9) for sharing modded [ar0234 driver](https://github.com/6by9/linux/tree/rpi-6.12.y-ar0234) and [libcamera](https://github.com/6by9/libcamera/tree/ar0234) code.
 - [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver) repository which was used as the basis for structuring this driver.
-- Sasha Shturma's Raspberry Pi CM4 Сarrier with Hi-Res MIPI Display project, the install script is adapted from the github project page: https://github.com/renetec-io/cm4-panel-jdi-lt070me05000
+- Sasha Shturma's Raspberry Pi CM4 carrier with Hi-Res MIPI Display project. The install script is adapted from [cm4-panel-jdi-lt070me05000](https://github.com/renetec-io/cm4-panel-jdi-lt070me05000).
