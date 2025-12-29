@@ -81,7 +81,7 @@
 #define AR0234_REG_ORIENTATION_HFLIP	BIT(14)
 #define AR0234_REG_ORIENTATION_VFLIP	BIT(15)
 
-#define AR0234_REG_OUTPUT_DEPTH		0x31AC
+#define AR0234_REG_DATA_FORMAT_BITS		0x31AC
 
 /* Test Pattern Control */
 #define AR0234_REG_TEST_PATTERN			0x0600
@@ -147,12 +147,6 @@ enum ar0234_lane_mode_id {
 	AR0234_LANE_MODE_ID_AMOUNT,
 };
 
-enum ar0234_bit_depth_id {
-	AR0234_BIT_DEPTH_ID_8BIT = 0,
-	AR0234_BIT_DEPTH_ID_10BIT,
-	AR0234_BIT_DEPTH_ID_AMOUNT,
-};
-
 /* Mode : resolution and related config&values */
 struct ar0234_format {
 	/* Frame width */
@@ -200,6 +194,7 @@ static const struct ar0234_reg ar0234_pll_config_24_360_8bit[] = {
 	{ 0x31BA, 0x028B },	// MIPI_TIMING_3
 	{ 0x31BC, 0x0D89 },	// MIPI_TIMING_4
 	{ 0x3354, 0x002A }, // MIPI_CNTRL
+	{ AR0234_REG_DATA_FORMAT_BITS, 0x0808 }, // 8bit in/out
 };
 
 /*
@@ -223,6 +218,7 @@ static const struct ar0234_reg ar0234_pll_config_24_450_10bit[] = {
 	{ 0x31BA, 0X030B },	// MIPI_TIMING_3
 	{ 0x31BC, 0X0D89 },	// MIPI_TIMING_4
 	{ 0x3354, 0x002B }, // MIPI_CNTRL
+	{ AR0234_REG_DATA_FORMAT_BITS, 0x0A0A }, // 10bit in/out
 };
 
 static const struct ar0234_reg ar0234_reset[] = {
@@ -866,22 +862,6 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 	return 0;
 }
 
-static int ar0234_set_framefmt(struct ar0234 *ar0234)
-{
-	switch (ar0234->fmt.code) {
-	case MEDIA_BUS_FMT_SGRBG10_1X10:
-	case MEDIA_BUS_FMT_Y10_1X10:
-		return ar0234_write_reg(ar0234, 0x31AC, AR0234_REG_VALUE_16BIT,
-					0x0A0A);
-	case MEDIA_BUS_FMT_SGRBG8_1X8:
-	case MEDIA_BUS_FMT_Y8_1X8:
-		return ar0234_write_reg(ar0234, 0x31AC, AR0234_REG_VALUE_16BIT,
-					0x0808);
-	}
-
-	return -EINVAL;
-}
-
 static const struct v4l2_rect *
 __ar0234_get_pad_crop(struct ar0234 *ar0234, struct v4l2_subdev_state *sd_state,
 			unsigned int pad, enum v4l2_subdev_format_whence which)
@@ -996,13 +976,6 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	ret = ar0234_write_regs(ar0234, reg_seq->regs, reg_seq->amount);
 	if (ret) {
 		dev_err(&client->dev, "%s failed to set mode\n", __func__);
-		return ret;
-	}
-
-	ret = ar0234_set_framefmt(ar0234);
-	if (ret) {
-		dev_err(&client->dev, "%s failed to set frame format: %d\n",
-			__func__, ret);
 		return ret;
 	}
 
