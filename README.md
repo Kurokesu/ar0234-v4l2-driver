@@ -208,6 +208,7 @@ sudo meson install -C build
 > ```
 
 #### Verify the rpicam-apps Build
+
 Verify that `rpicam-apps` was rebuilt correctly by checking the version:
 
 ```bash
@@ -223,7 +224,7 @@ libcamera build: v0.4.0
 
 ### Verify that `ar0234` is detected
 
-Reboot to apply the changes:
+Do not forget to reboot!
 
 ```bash
 sudo reboot
