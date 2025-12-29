@@ -643,6 +643,9 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		ret = 0;//ar0234_write_reg(ar0234, AR0234_REG_TESTP_GREENB,
 			//	       AR0234_REG_VALUE_16BIT, ctrl->val);
 		break;
+	case V4L2_CID_HBLANK:
+		ret = -EINVAL;
+		break;
 	default:
 		dev_info(&client->dev,
 			"ctrl(id:0x%x,val:0x%x) is not handled\n",
