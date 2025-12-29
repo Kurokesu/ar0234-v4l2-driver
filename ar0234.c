@@ -300,11 +300,6 @@ static const char * const ar0234_supply_name[] = {
 #define AR0234_XCLR_MIN_DELAY_US	6200
 #define AR0234_XCLR_DELAY_RANGE_US	1000
 
-static const s64 link_freq[] = {
-	AR0234_FREQ_LINK_10BIT,
-	AR0234_FREQ_LINK_8BIT,
-};
-
 /* Format configs */
 static const struct ar0234_format ar0234_formats[] = {
 	{
@@ -340,7 +335,7 @@ struct ar0234_fmt_codes {
 
 struct ar0234_pll_config {
 	s64 freq_link;
-	u64 freq_extclk;
+	u32 freq_extclk;
 	struct ar0234_reg_sequence regs_pll;
 	struct ar0234_fmt_codes fmt_codes;
 };
@@ -1213,7 +1208,7 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 
 	ctrl = v4l2_ctrl_new_int_menu(ctrl_hdlr, &ar0234_ctrl_ops,
 					V4L2_CID_LINK_FREQ, 0, 0,
-					link_freq);
+					&ar0234->pll_config->freq_link);
 	if (ctrl)
 		ctrl->flags |= V4L2_CTRL_FLAG_READ_ONLY;
 
