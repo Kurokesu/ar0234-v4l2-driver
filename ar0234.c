@@ -53,7 +53,7 @@
 #define AR0234_REG_LINE_LENGTH_PCK		0x300C
 #define AR0234_REG_FRAME_LENGTH_LINES	0x300A
 #define AR0234_FLL_MAX					0xFFFF
-#define AR0234_FLL_MIN					1220
+#define AR0234_VBLANK_MIN				16
 #define AR0234_LINE_LENGTH_PCK_DEF		612
 
 /* Exposure control */
@@ -792,18 +792,17 @@ static int ar0234_get_pad_format(struct v4l2_subdev *sd,
 
 static void ar0234_set_framing_limits(struct ar0234 *ar0234)
 {
-	int hblank, vblank_min;
+	int hblank;
 	const struct ar0234_format *format = ar0234->mode.format;
 
 	/* Update limits and set FPS to default */
-	vblank_min = AR0234_FLL_MIN - format->height;
 	__v4l2_ctrl_modify_range(
-		ar0234->vblank, vblank_min,
+		ar0234->vblank, AR0234_VBLANK_MIN,
 		AR0234_FLL_MAX - format->height,
-		ar0234->vblank->step, vblank_min);
+		ar0234->vblank->step, AR0234_VBLANK_MIN);
 
 	/* Setting this will adjust the exposure limits as well */
-	__v4l2_ctrl_s_ctrl(ar0234->vblank, vblank_min);
+	__v4l2_ctrl_s_ctrl(ar0234->vblank, AR0234_VBLANK_MIN);
 
 	hblank = AR0234_LINE_LENGTH_PCK_DEF - format->width;
 	__v4l2_ctrl_modify_range(ar0234->hblank, hblank, hblank, 1, hblank);
