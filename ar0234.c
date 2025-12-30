@@ -343,15 +343,19 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 		.freq_link = AR0234_FREQ_LINK_8BIT,
 		.freq_extclk = AR0234_FREQ_EXTCLK,
 		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_360_8bit),
-		.fmt_codes.bayer = MEDIA_BUS_FMT_SGRBG8_1X8,
-		.fmt_codes.mono = MEDIA_BUS_FMT_Y8_1X8,
+		.fmt_codes = {
+			.bayer = MEDIA_BUS_FMT_SGRBG8_1X8,
+			.mono = MEDIA_BUS_FMT_Y8_1X8,
+		},
 	},
 	{
 		.freq_link = AR0234_FREQ_LINK_10BIT,
 		.freq_extclk = AR0234_FREQ_EXTCLK,
 		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_450_10bit),
-		.fmt_codes.bayer = MEDIA_BUS_FMT_SGRBG10_1X10,
-		.fmt_codes.mono = MEDIA_BUS_FMT_Y10_1X10,
+		.fmt_codes = {
+			.bayer = MEDIA_BUS_FMT_SGRBG10_1X10,
+			.mono = MEDIA_BUS_FMT_Y10_1X10,
+		},
 	},
 };
 
