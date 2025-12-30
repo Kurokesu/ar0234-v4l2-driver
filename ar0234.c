@@ -560,8 +560,7 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 
 static void ar0234_adjust_exposure_range(struct ar0234 *ar0234)
 {
-	int exposure_max = ar0234->mode.format->height + ar0234->vblank->val -
-						AR0234_EXPOSURE_MIN;
+	int exposure_max = ar0234->mode.format->height + ar0234->vblank->val - 1;
 
 	__v4l2_ctrl_modify_range(ar0234->exposure, ar0234->exposure->minimum,
 				 exposure_max, ar0234->exposure->step,
