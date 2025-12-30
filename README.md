@@ -95,10 +95,10 @@ dtoverlay=ar0234,link-frequency=360000000
 
 | link frequency | data rate per lane | lanes | bit depth | width | height | maximum framerate |
 |---|---|---|---|---|---|---|
-| 360MHz | 720 Mbps | 2 | 8 | 1280 | 800 | 60 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 1280 | 800 | 60 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 1280 | 800 | 120 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 1280 | 800 | 120 fps |
+| 360MHz | 720 Mbps | 2 | 8 | 1280 | 800 | 90 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 1280 | 800 | 90 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 1280 | 800 | 180 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 1280 | 800 | 180 fps |
 | 360MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
@@ -241,8 +241,8 @@ You should see output similar to this (depending on your link-frequency and lane
 Available cameras
 -----------------
 0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0234@10)
-    Modes: 'SGRBG10_CSI2P' : 1280x800 [120.54 fps - (314, 190)/1280x800 crop]
-                             1920x1200 [120.54 fps - (0, 0)/1920x1200 crop]
+    Modes: 'SGRBG10_CSI2P' : 1280x800 [180.25 fps - (314, 190)/1280x800 crop]
+                             1920x1200 [120.95 fps - (0, 0)/1920x1200 crop]
 ```
 
 ## Special Thanks
