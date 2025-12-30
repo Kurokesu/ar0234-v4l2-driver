@@ -303,7 +303,6 @@ static const char * const ar0234_supply_name[] = {
 /* Format configs */
 static const struct ar0234_format ar0234_formats[] = {
 	{
-		/* 1280x1200 mode */
 		.width = 1920,
 		.height = 1200,
 		.crop = {
@@ -315,7 +314,6 @@ static const struct ar0234_format ar0234_formats[] = {
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
 	},
 	{
-		/* Cropped 1280x720 mode */
 		.width = 1280,
 		.height = 800,
 		.crop = {
@@ -908,7 +906,6 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-
 	const struct ar0234_reg_sequence *reg_seq;
 	int ret;
 
@@ -945,7 +942,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 	}
 
-	/* Apply default values of current mode */
+	/* Apply default values of current frame format */
 	reg_seq = &ar0234->mode.format->reg_sequence;
 	ret = ar0234_write_regs(ar0234, reg_seq->regs, reg_seq->amount);
 	if (ret) {
