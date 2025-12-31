@@ -195,11 +195,28 @@ cd rpicam-apps
 
 #### Configure the rpicam-apps Build
 
-Run the following `meson` command to configure the build:
+Run the following `meson` command to configure the build (libav enabled by default):
 
 ```bash
-meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
 ```
+
+> [!IMPORTANT]
+> `-Denable_libav` enables optional video encode/decode support (FFmpeg / `libavcodec`).
+> 
+> - **Debian Bookworm**: the packaged `libav*` version is **too old** to build `rpicam-apps` releases **newer than v1.9.0** with libav enabled.
+>   - On Bookworm this typically shows up as build errors like “libavcodec API version is too old”, because Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60** (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
+>   - If you want libav support on Bookworm, check out the `rpicam-apps` **v1.9.0** before running `meson setup`:
+> 
+>     ```bash
+>     git checkout v1.9.0
+>     ```
+>   - If you are building **`rpicam-apps` > v1.9.0** on Bookworm, you must disable libav:
+>
+>     ```bash
+>     meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+>     ```
+> - **Debian Trixie**: build `rpicam-apps` as usual with `-Denable_libav=enabled` (no need to check out an older version).
 
 #### Build rpicam-apps
 
