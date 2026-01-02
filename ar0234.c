@@ -288,7 +288,7 @@ static const int ar0234_test_pattern_val[] = {
 };
 
 /* regulator supplies */
-static const char *const ar0234_supply_name[] = {
+static const char *const ar0234_supply_names[] = {
 	/* Supplies can be enabled in any order */
 	"vana", /* Analog (2.8V) supply */
 	"vdig", /* Digital Core (1.8V) supply */
@@ -362,7 +362,7 @@ static const u32 ar0234_freq_pixclk[] = {
 
 struct ar0234_hw_config {
 	struct clk *extclk;
-	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
+	struct regulator_bulk_data supplies[AR0234_SUPPLY_AMOUNT];
 	struct gpio_desc *gpio_reset;
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
@@ -956,7 +956,7 @@ static int ar0234_power_on(struct device *dev)
 	struct ar0234 *ar0234 = to_ar0234(sd);
 	int ret;
 
-	ret = regulator_bulk_enable(AR0234_NUM_SUPPLIES,
+	ret = regulator_bulk_enable(AR0234_SUPPLY_AMOUNT,
 				    ar0234->hw_config.supplies);
 	if (ret) {
 		dev_err(&client->dev, "%s: failed to enable regulators\n",
@@ -977,7 +977,8 @@ static int ar0234_power_on(struct device *dev)
 	return 0;
 
 reg_off:
-	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
+	regulator_bulk_disable(AR0234_SUPPLY_AMOUNT,
+			       ar0234->hw_config.supplies);
 
 	return ret;
 }
@@ -989,7 +990,8 @@ static int ar0234_power_off(struct device *dev)
 	struct ar0234 *ar0234 = to_ar0234(sd);
 
 	gpiod_set_value_cansleep(ar0234->hw_config.gpio_reset, 0);
-	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
+	regulator_bulk_disable(AR0234_SUPPLY_AMOUNT,
+			       ar0234->hw_config.supplies);
 	clk_disable_unprepare(ar0234->hw_config.extclk);
 
 	return 0;
@@ -1174,10 +1176,10 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 	int ret = -EINVAL;
 	unsigned int i;
 
-	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
-		hw_config->supplies[i].supply = ar0234_supply_name[i];
+	for (i = 0; i < AR0234_SUPPLY_AMOUNT; i++)
+		hw_config->supplies[i].supply = ar0234_supply_names[i];
 
-	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
+	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_SUPPLY_AMOUNT,
 				      hw_config->supplies);
 	if (ret)
 		return dev_err_probe(ar0234->dev, ret,
