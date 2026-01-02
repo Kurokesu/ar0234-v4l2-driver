@@ -22,88 +22,104 @@
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-fwnode.h>
-#include <media/v4l2-mediabus.h>
-#include <linux/unaligned.h>
-
-#define AR0234_REG_ADDRESS_BITS 16
-
-/* Single format code for selected link frequency */
-#define AR0234_FMT_CODE_AMOUNT 1
+/* Registers */
+#define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
+#define AR0234_REG_Y_ADDR_START CCI_REG16(0x3002)
+#define AR0234_REG_X_ADDR_START CCI_REG16(0x3004)
+#define AR0234_REG_Y_ADDR_END CCI_REG16(0x3006)
+#define AR0234_REG_X_ADDR_END CCI_REG16(0x3008)
+#define AR0234_REG_FRAME_LENGTH_LINES CCI_REG16(0x300A)
+#define AR0234_REG_EXPOSURE_COARSE CCI_REG16(0x3012)
+#define AR0234_REG_RESET CCI_REG16(0x301A)
+#define AR0234_REG_MODE_SELECT CCI_REG8(0x301C)
+#define AR0234_REG_IMAGE_ORIENTATION CCI_REG8(0x301D)
+#define AR0234_REG_VT_PIX_CLK_DIV CCI_REG16(0x302A)
+#define AR0234_REG_VT_SYS_CLK_DIV CCI_REG16(0x302C)
+#define AR0234_REG_PRE_PLL_CLK_DIV CCI_REG16(0x302E)
+#define AR0234_REG_PLL_MULTIPLIER CCI_REG16(0x3030)
+#define AR0234_REG_OP_PIX_CLK_DIV CCI_REG16(0x3036)
+#define AR0234_REG_OP_SYS_CLK_DIV CCI_REG16(0x3038)
+#define AR0234_REG_READ_MODE CCI_REG16(0x3040)
+#define AR0234_REG_DIGITAL_GAIN CCI_REG16(0x305E)
+#define AR0234_REG_ANALOG_GAIN CCI_REG16(0x3060)
+#define AR0234_REG_SMIA_TEST CCI_REG16(0x3064)
+#define AR0234_REG_DATAPATH_SELECT CCI_REG16(0x306E)
+#define AR0234_REG_TEST_PATTERN_MODE CCI_REG16(0x3070)
+#define AR0234_REG_TEST_DATA_RED CCI_REG16(0x3072)
+#define AR0234_REG_TEST_DATA_GREENR CCI_REG16(0x3074)
+#define AR0234_REG_TEST_DATA_BLUE CCI_REG16(0x3076)
+#define AR0234_REG_TEST_DATA_GREENB CCI_REG16(0x3078)
+#define AR0234_REG_OPERATION_MODE_CTRL CCI_REG16(0x3082)
+#define AR0234_REG_SEQ_DATA_PORT CCI_REG16(0x3086)
+#define AR0234_REG_SEQ_CTRL_PORT CCI_REG16(0x3088)
+#define AR0234_REG_X_ODD_INC CCI_REG16(0x30A2)
+#define AR0234_REG_Y_ODD_INC CCI_REG16(0x30A6)
+#define AR0234_REG_DIGITAL_TEST CCI_REG16(0x30B0)
+#define AR0234_REG_TEMPSENS_CTRL CCI_REG16(0x30B4)
+#define AR0234_REG_AE_LUMA_TARGET CCI_REG16(0x3102)
+#define AR0234_REG_DELTA_DK_CONTROL CCI_REG16(0x3180)
+#define AR0234_REG_DATA_FORMAT_BITS CCI_REG16(0x31AC)
+#define AR0234_REG_SERIAL_FORMAT CCI_REG16(0x31AE)
+#define AR0234_REG_FRAME_PREAMBLE CCI_REG16(0x31B0)
+#define AR0234_REG_LINE_PREAMBLE CCI_REG16(0x31B2)
+#define AR0234_REG_MIPI_TIMING_0 CCI_REG16(0x31B4)
+#define AR0234_REG_MIPI_TIMING_1 CCI_REG16(0x31B6)
+#define AR0234_REG_MIPI_TIMING_2 CCI_REG16(0x31B8)
+#define AR0234_REG_MIPI_TIMING_3 CCI_REG16(0x31BA)
+#define AR0234_REG_MIPI_TIMING_4 CCI_REG16(0x31BC)
+#define AR0234_REG_COMPANDING CCI_REG16(0x31D0)
+#define AR0234_REG_PIX_DEF_ID CCI_REG16(0x31E0)
+#define AR0234_REG_MIPI_CNTRL CCI_REG16(0x3354)
 
 /* Chip ID */
-#define AR0234_REG_CHIP_ID 0x3000
-#define AR0234_CHIP_ID 0x0a56
-#define AR0234_CHIP_ID_MONO 0x1a56
+#define AR0234_CHIP_ID 0x0A56
+#define AR0234_CHIP_ID_MONO 0x1A56
 
-#define AR0234_REG_IMAGE_ORIENTATION CCI_REG8(0x301D)
-
+/* Sensor frequencies */
 #define AR0234_FREQ_EXTCLK 24000000
 #define AR0234_FREQ_PIXCLK_2LANE 45000000
 #define AR0234_FREQ_PIXCLK_4LANE 90000000
 #define AR0234_FREQ_LINK_8BIT 360000000
 #define AR0234_FREQ_LINK_10BIT 450000000
 
-#define AR0234_REG_LINE_LENGTH_PCK 0x300C
-#define AR0234_REG_FRAME_LENGTH_LINES 0x300A
+/* Frame timing */
 #define AR0234_FLL_MAX 0xFFFF
 #define AR0234_VBLANK_MIN 16
 #define AR0234_LINE_LENGTH_PCK_DEF 612
 
 /* Exposure control */
-#define AR0234_REG_EXPOSURE_COARSE 0x3012
 #define AR0234_EXPOSURE_MIN 2
 #define AR0234_EXPOSURE_STEP 1
 
 /* Analog gain control */
-#define AR0234_REG_ANALOG_GAIN 0x3060
 #define AR0234_ANA_GAIN_MIN 0
 #define AR0234_ANA_GAIN_MAX 232
 #define AR0234_ANA_GAIN_STEP 1
 #define AR0234_ANA_GAIN_DEFAULT 0x0
 
 /* Digital gain control */
-#define AR0234_REG_DIGITAL_GAIN 0x305e
 #define AR0234_DGTL_GAIN_MIN 0x0100
-#define AR0234_DGTL_GAIN_MAX 0x0fff
+#define AR0234_DGTL_GAIN_MAX 0x0FFF
 #define AR0234_DGTL_GAIN_DEFAULT 0x0100
 #define AR0234_DGTL_GAIN_STEP 1
 
-#define AR0234_REG_DATA_FORMAT_BITS 0x31AC
-
-/* Test Pattern Control */
-#define AR0234_REG_TEST_PATTERN 0x0600
-#define AR0234_TEST_PATTERN_DISABLE 0
-#define AR0234_TEST_PATTERN_SOLID_COLOR 1
-#define AR0234_TEST_PATTERN_COLOR_BARS 2
-#define AR0234_TEST_PATTERN_GREY_COLOR 3
-#define AR0234_TEST_PATTERN_PN9 4
-
-/* Test pattern colour components */
-#define AR0234_REG_TESTP_RED 0x0602
-#define AR0234_REG_TESTP_GREENR 0x0604
-#define AR0234_REG_TESTP_BLUE 0x0606
-#define AR0234_REG_TESTP_GREENB 0x0608
+/* Test Patterns */
 #define AR0234_TESTP_COLOUR_MIN 0
-#define AR0234_TESTP_COLOUR_MAX 0x03ff
+#define AR0234_TESTP_COLOUR_MAX 0x03FF
 #define AR0234_TESTP_COLOUR_STEP 1
 #define AR0234_TESTP_RED_DEFAULT AR0234_TESTP_COLOUR_MAX
 #define AR0234_TESTP_GREENR_DEFAULT 0
 #define AR0234_TESTP_BLUE_DEFAULT 0
 #define AR0234_TESTP_GREENB_DEFAULT 0
 
-/* Helper macro for declaring ar0234 reg sequence */
-#define AR0234_REG_SEQ(_reg_array)                                      \
-	{                                                               \
-		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
-	}
+#define AR0234_TEST_PATTERN_DISABLED 0
+#define AR0234_TEST_PATTERN_SOLID_COLOR 1
+#define AR0234_TEST_PATTERN_VERTICAL_COLOR_BARS 2
+#define AR0234_TEST_PATTERN_FADE_TO_GREY 3
+#define AR0234_TEST_PATTERN_PN9 4
+#define AR0234_TEST_PATTERN_WALKING_1S 256
 
-enum pad_types {
-	IMAGE_PAD,
-	METADATA_PAD,
-	NUM_PADS,
-};
-
-/* AR0234 native and active pixel array size. */
+/* Native and active pixel array sizes */
 #define AR0234_NATIVE_WIDTH 1484U
 #define AR0234_NATIVE_HEIGHT 856U
 #define AR0234_PIXEL_ARRAY_LEFT 6U
@@ -111,16 +127,34 @@ enum pad_types {
 #define AR0234_PIXEL_ARRAY_WIDTH 1920U
 #define AR0234_PIXEL_ARRAY_HEIGHT 1200U
 
-/* Embedded metadata stream structure */
-// Padding every 4 bytes
+/* Embedded metadata stream buffer size (padding every 4 bytes) */
 #define AR0234_MD_PADDING_BYTES (AR0234_PIXEL_ARRAY_WIDTH / 4)
 #define AR0234_EMBEDDED_LINE_WIDTH \
 	(AR0234_PIXEL_ARRAY_WIDTH + AR0234_MD_PADDING_BYTES)
 #define AR0234_NUM_EMBEDDED_LINES 2
 
-struct ar0234_reg {
-	u16 address;
-	u16 val;
+/* RESET GPIO */
+#define AR0234_RESET_DELAY_MIN_US 6200
+#define AR0234_RESET_DELAY_RANGE_US 1000
+
+/* Register address size in bits */
+#define AR0234_REG_ADDRESS_BITS 16
+
+/* 1 format code for selected link frequency */
+#define AR0234_FMT_CODE_AMOUNT 1
+
+/* Helper macro for declaring ar0234 reg sequence */
+#define AR0234_REG_SEQ(_reg_array)                                      \
+	{                                                               \
+		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
+	}
+
+#define AR0234_SUPPLY_AMOUNT ARRAY_SIZE(ar0234_supply_names)
+
+enum pad_types {
+	IMAGE_PAD,
+	METADATA_PAD,
+	NUM_PADS,
 };
 
 struct ar0234_reg_sequence {
@@ -149,16 +183,6 @@ struct ar0234_format {
 struct ar0234_mode {
 	struct ar0234_format const *format;
 };
-
-#define VT_PIX_CLK_DIV 0x302A
-#define VT_SYS_CLK_DIV 0x302C
-#define PRE_PLL_CLK_DIV 0x302E
-#define PLL_MULTIPLIER 0x3030
-#define OP_PIX_CLK_DIV 0x3036
-#define OP_SYS_CLK_DIV 0x3038
-#define DIGITAL_TEST 0x30B0
-
-#define DELAY 0xffff /* Delay for specified number of ms */
 
 /*
  * PLL config for:
@@ -277,11 +301,6 @@ static const char *const ar0234_supply_name[] = {
 	"vdig", /* Digital Core (1.8V) supply */
 	"vddl", /* IF (1.2V) supply */
 };
-
-#define AR0234_NUM_SUPPLIES ARRAY_SIZE(ar0234_supply_name)
-
-#define AR0234_XCLR_MIN_DELAY_US 6200
-#define AR0234_XCLR_DELAY_RANGE_US 1000
 
 /* Format configs */
 static const struct ar0234_format ar0234_formats[] = {
