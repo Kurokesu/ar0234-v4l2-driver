@@ -1179,10 +1179,9 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
 				      hw_config->supplies);
-	if (ret) {
-		dev_err(ar0234->dev, "failed to get regulators\n");
-		return ret;
-	}
+	if (ret)
+		return dev_err_probe(ar0234->dev, ret,
+				     "failed to get regulators\n");
 
 	/* Get optional reset pin */
 	hw_config->gpio_reset =
@@ -1190,24 +1189,21 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 	/* Get input clock (extclk) */
 	hw_config->extclk = devm_clk_get(ar0234->dev, "extclk");
-	if (IS_ERR(hw_config->extclk)) {
-		if (PTR_ERR(hw_config->extclk) != -EPROBE_DEFER)
-			dev_err(ar0234->dev, "failed to get extclk %ld\n",
-				PTR_ERR(hw_config->extclk));
-		return PTR_ERR(hw_config->extclk);
-	}
+	if (IS_ERR(hw_config->extclk))
+		return dev_err_probe(ar0234->dev, PTR_ERR(hw_config->extclk),
+				     "failed to get extclk\n");
 
 	endpoint =
 		fwnode_graph_get_next_endpoint(dev_fwnode(ar0234->dev), NULL);
-	if (!endpoint) {
-		dev_err(ar0234->dev, "endpoint node not found\n");
-		return -EINVAL;
-	}
+	if (!endpoint)
+		return dev_err_probe(ar0234->dev, -ENXIO,
+				     "endpoint node not found\n");
 
-	if (v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg)) {
-		dev_err(ar0234->dev, "could not parse endpoint\n");
-		goto error_out;
-	}
+	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg);
+	fwnode_handle_put(endpoint);
+	if (ret)
+		return dev_err_probe(ar0234->dev, ret,
+				     "failed to parse endpoint\n");
 
 	/* Check the number of MIPI CSI2 data lanes */
 	switch (ep_cfg.bus.mipi_csi2.num_data_lanes) {
@@ -1228,9 +1224,9 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 	/* Check the link frequency set in device tree */
 	if (!ep_cfg.nr_of_link_frequencies) {
-		dev_err(ar0234->dev,
+		ret = dev_err_probe(
+			ar0234->dev, -EINVAL,
 			"link-frequency property not found in DT\n");
-		ret = -EINVAL;
 		goto error_out;
 	}
 
@@ -1248,11 +1244,11 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 	}
 
 	if (i == ARRAY_SIZE(ar0234_pll_configs)) {
-		dev_err(ar0234->dev,
+		ret = dev_err_probe(
+			ar0234->dev, -EINVAL,
 			"no valid sensor mode defined for EXTCLK %luHz\
 			 and link frequency %lluHz\n",
 			extclk_frequency, ep_cfg.link_frequencies[0]);
-		ret = -EINVAL;
 		goto error_out;
 	}
 
@@ -1267,7 +1263,6 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 error_out:
 	v4l2_fwnode_endpoint_free(&ep_cfg);
-	fwnode_handle_put(endpoint);
 
 	return ret;
 }
@@ -1286,6 +1281,10 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
+	ret = ar0234_parse_hw_config(ar0234);
+	if (ret)
+		return ret;
+
 	ar0234->regmap =
 		devm_cci_regmap_init_i2c(client, AR0234_REG_ADDRESS_BITS);
 	if (IS_ERR(ar0234->regmap))
