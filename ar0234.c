@@ -159,7 +159,7 @@ enum pad_types {
 
 struct ar0234_reg_sequence {
 	unsigned int amount;
-	const struct ar0234_reg *regs;
+	const struct cci_reg_sequence *regs;
 };
 
 enum ar0234_lane_mode_id {
@@ -190,21 +190,21 @@ struct ar0234_mode {
  * Link frequency - 360MHz
  * Bit depth      - 8bit
  */
-static const struct ar0234_reg ar0234_pll_config_24_360_8bit[] = {
-	{ 0x302A, 0x0008 }, // VT_PIX_CLK_DIV
-	{ 0x302C, 0x0001 }, // VT_SYS_CLK_DIV
-	{ 0x302E, 0x0001 }, // PRE_PLL_CLK_DIV
-	{ 0x3030, 0x001E }, // PLL_MULTIPLIER
-	{ 0x3036, 0x0008 }, // OP_PIX_CLK_DIV
-	{ 0x3038, 0x0002 }, // OP_SYS_CLK_DIV
-	{ 0x31B0, 0x0080 }, // FRAME_PREAMBLE
-	{ 0x31B2, 0x005C }, // LINE_PREAMBLE
-	{ 0x31B4, 0x5248 }, // MIPI_TIMING_0
-	{ 0x31B6, 0x4258 }, // MIPI_TIMING_1
-	{ 0x31B8, 0x904C }, // MIPI_TIMING_2
-	{ 0x31BA, 0x028B }, // MIPI_TIMING_3
-	{ 0x31BC, 0x0D89 }, // MIPI_TIMING_4
-	{ 0x3354, 0x002A }, // MIPI_CNTRL
+static const struct cci_reg_sequence ar0234_pll_config_24_360_8bit[] = {
+	{ AR0234_REG_VT_PIX_CLK_DIV, 0x0008 },
+	{ AR0234_REG_VT_SYS_CLK_DIV, 0x0001 },
+	{ AR0234_REG_PRE_PLL_CLK_DIV, 0x0001 },
+	{ AR0234_REG_PLL_MULTIPLIER, 0x001E },
+	{ AR0234_REG_OP_PIX_CLK_DIV, 0x0008 },
+	{ AR0234_REG_OP_SYS_CLK_DIV, 0x0002 },
+	{ AR0234_REG_FRAME_PREAMBLE, 0x0080 },
+	{ AR0234_REG_LINE_PREAMBLE, 0x005C },
+	{ AR0234_REG_MIPI_TIMING_0, 0x5248 },
+	{ AR0234_REG_MIPI_TIMING_1, 0x4258 },
+	{ AR0234_REG_MIPI_TIMING_2, 0x904C },
+	{ AR0234_REG_MIPI_TIMING_3, 0x028B },
+	{ AR0234_REG_MIPI_TIMING_4, 0x0D89 },
+	{ AR0234_REG_MIPI_CNTRL, 0x002A },
 	{ AR0234_REG_DATA_FORMAT_BITS, 0x0808 }, // 8bit in/out
 };
 
@@ -214,74 +214,67 @@ static const struct ar0234_reg ar0234_pll_config_24_360_8bit[] = {
  * Link frequency - 450MHz
  * Bit depth      - 10bit
  */
-static const struct ar0234_reg ar0234_pll_config_24_450_10bit[] = {
-	{ 0x302A, 0x0005 }, // VT_PIX_CLK_DIV
-	{ 0x302C, 0x0001 }, // VT_SYS_CLK_DIV
-	{ 0x302E, 0x0008 }, // PRE_PLL_CLK_DIV
-	{ 0x3030, 0x0096 }, // PLL_MULTIPLIER
-	{ 0x3036, 0x000A }, // OP_PIX_CLK_DIV
-	{ 0x3038, 0x0001 }, // OP_SYS_CLK_DIV
-	{ 0x31B0, 0X0082 }, // FRAME_PREAMBLE
-	{ 0x31B2, 0X005C }, // LINE_PREAMBLE
-	{ 0x31B4, 0X4248 }, // MIPI_TIMING_0
-	{ 0x31B6, 0X4258 }, // MIPI_TIMING_1
-	{ 0x31B8, 0X904B }, // MIPI_TIMING_2
-	{ 0x31BA, 0X030B }, // MIPI_TIMING_3
-	{ 0x31BC, 0X0D89 }, // MIPI_TIMING_4
-	{ 0x3354, 0x002B }, // MIPI_CNTRL
+static const struct cci_reg_sequence ar0234_pll_config_24_450_10bit[] = {
+	{ AR0234_REG_VT_PIX_CLK_DIV, 0x0005 },
+	{ AR0234_REG_VT_SYS_CLK_DIV, 0x0001 },
+	{ AR0234_REG_PRE_PLL_CLK_DIV, 0x0008 },
+	{ AR0234_REG_PLL_MULTIPLIER, 0x0096 },
+	{ AR0234_REG_OP_PIX_CLK_DIV, 0x000A },
+	{ AR0234_REG_OP_SYS_CLK_DIV, 0x0001 },
+	{ AR0234_REG_FRAME_PREAMBLE, 0X0082 },
+	{ AR0234_REG_LINE_PREAMBLE, 0X005C },
+	{ AR0234_REG_MIPI_TIMING_0, 0X4248 },
+	{ AR0234_REG_MIPI_TIMING_1, 0X4258 },
+	{ AR0234_REG_MIPI_TIMING_2, 0X904B },
+	{ AR0234_REG_MIPI_TIMING_3, 0X030B },
+	{ AR0234_REG_MIPI_TIMING_4, 0X0D89 },
+	{ AR0234_REG_MIPI_CNTRL, 0x002B },
 	{ AR0234_REG_DATA_FORMAT_BITS, 0x0A0A }, // 10bit in/out
 };
 
-static const struct ar0234_reg ar0234_reset[] = {
-	{ DELAY, 20 },
-	{ AR0234_REG_RESET, AR0234_REG_RESET_RESET },
-	{ DELAY, 200 },
-	{ AR0234_REG_RESET, AR0234_REG_RESET_STREAM_OFF },
+static const struct cci_reg_sequence common_init[] = {
+	{ AR0234_REG_DIGITAL_TEST, 0x0028 },
+	{ AR0234_REG_DATAPATH_SELECT, 0x9010 },
+	{ AR0234_REG_OPERATION_MODE_CTRL, 0x0003 },
+	{ AR0234_REG_READ_MODE, 0x0000 },
+	{ AR0234_REG_COMPANDING, 0x0000 },
+	{ AR0234_REG_SEQ_CTRL_PORT, 0x8050 },
+	//	{ AR0234_REG_SEQ_DATA_PORT, 0x9237 },
+	{ CCI_REG16(0x3096), 0x0280 },
+	{ AR0234_REG_PIX_DEF_ID, 0x0003 },
+	{ CCI_REG16(0x3F4C), 0x121F },
+	{ CCI_REG16(0x3F4E), 0x121F },
+	{ CCI_REG16(0x3F50), 0x0B81 },
+	{ AR0234_REG_SEQ_CTRL_PORT, 0x81BA },
+	{ AR0234_REG_SEQ_DATA_PORT, 0x3D02 },
+	{ CCI_REG16(0x3ED2), 0xFA96 },
+	{ AR0234_REG_DELTA_DK_CONTROL, 0x824F },
+	{ CCI_REG16(0x3ECC), 0x0D42 },
+	{ CCI_REG16(0x3ECC), 0x0D42 },
+	{ CCI_REG16(0x30F0), 0x2283 },
+	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
+	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
+	{ CCI_REG16(0x30BA), 0x7626 },
+	{ AR0234_REG_RESET, 0x205C },
+	{ AR0234_REG_SMIA_TEST, 0x1982 },
 };
 
-static const struct ar0234_reg common_init[] = {
-	{ 0x30B0, 0x0028 }, // DIGITAL_TEST
-	{ 0x306E, 0x9010 }, // DATAPATH_SELECT
-	{ 0x3082, 0x0003 }, // OPERATION_MODE_CTRL
-	{ 0x3040, 0x0000 }, // READ_MODE
-	{ 0x31D0, 0x0000 }, // COMPANDING
-	{ 0x3088, 0x8050 }, // SEQ_CTRL_PORT
-	//	{ 0x3086, 0x9237 },	// SEQ_DATA_PORT
-	{ 0x3096, 0x0280 }, // RESERVED_MFR_3096
-	{ 0x31E0, 0x0003 }, // PIX_DEF_ID
-	{ 0x3F4C, 0x121F }, // RESERVED_MFR_3F4C
-	{ 0x3F4E, 0x121F }, // RESERVED_MFR_3F4E
-	{ 0x3F50, 0x0B81 }, // RESERVED_MFR_3F50
-	{ 0x3088, 0x81BA }, // SEQ_CTRL_PORT
-	{ 0x3086, 0x3D02 }, // SEQ_DATA_PORT
-	{ 0x3ED2, 0xFA96 }, // RESERVED_MFR_3ED2
-	{ 0x3180, 0x824F }, // DELTA_DK_CONTROL
-	{ 0x3ECC, 0x0D42 }, // RESERVED_MFR_3ECC
-	{ 0x3ECC, 0x0D42 }, // RESERVED_MFR_3ECC
-	{ 0x30F0, 0x2283 }, // RESERVED_MFR_30F0
-	{ 0x3102, 0x5000 }, // AE_LUMA_TARGET_REG
-	{ 0x30B4, 0x0011 }, // TEMPSENS_CTRL_REG
-	{ 0x30BA, 0x7626 }, // RESERVED_MFR_30BA
-	{ 0x301A, 0x205C }, // RESET_REGISTER
-	{ 0x3064, 0x1982 }, // EMBEDDED DATA
+static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 0x0008 },
+	{ AR0234_REG_X_ADDR_START, 0x0008 },
+	{ AR0234_REG_Y_ADDR_END, 0x04b7 },
+	{ AR0234_REG_X_ADDR_END, 0x0787 },
+	{ AR0234_REG_X_ODD_INC, 0x0001 },
+	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
-static const struct ar0234_reg ar0234_1920x1200_config[] = {
-	{ 0x3002, 0x0008 }, // Y_ADDR_START
-	{ 0x3004, 0x0008 }, // X_ADDR_START
-	{ 0x3006, 0x04b7 }, // Y_ADDR_END
-	{ 0x3008, 0x0787 }, // X_ADDR_END
-	{ 0x30A2, 0x0001 }, // X_ODD_INC
-	{ 0x30A6, 0x0001 }, // Y_ODD_INC
-};
-
-static const struct ar0234_reg ar0234_1280x800_config[] = {
-	{ 0x3002, 0x00d0 }, // Y_ADDR_START
-	{ 0x3004, 0x0148 }, // X_ADDR_START
-	{ 0x3006, 0x03ef }, // Y_ADDR_END
-	{ 0x3008, 0x0647 }, // X_ADDR_END
-	{ 0x30A2, 0x0001 }, // X_ODD_INC
-	{ 0x30A6, 0x0001 }, // Y_ODD_INC
+static const struct cci_reg_sequence ar0234_1280x800_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 0x00d0 },
+	{ AR0234_REG_X_ADDR_START, 0x0148 },
+	{ AR0234_REG_Y_ADDR_END, 0x03ef },
+	{ AR0234_REG_X_ADDR_END, 0x0647 },
+	{ AR0234_REG_X_ODD_INC, 0x0001 },
+	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
 static const char *const ar0234_test_pattern_menu[] = {
@@ -813,6 +806,29 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 	return -EINVAL;
 }
 
+static int ar0234_reset(struct ar0234 *ar0234)
+{
+	int ret;
+
+	/* 20ms */
+	usleep_range(20000, 21000);
+
+	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, 0x00D9, NULL);
+
+	/* 200ms */
+	usleep_range(200000, 201000);
+
+	return cci_write(ar0234->regmap, AR0234_REG_RESET, 0x2058, &ret);
+}
+
+static inline int
+ar0234_reg_seq_write(struct regmap *regmap,
+		     struct ar0234_reg_sequence const *reg_sequence)
+{
+	return cci_multi_reg_write(regmap, reg_sequence->regs,
+				   reg_sequence->amount, NULL);
+}
+
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
@@ -820,18 +836,17 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	int ret;
 
 	/* Reset */
-	ret = cci_multi_reg_write(ar0234->regmap, ar0234_reset,
-				  ARRAY_SIZE(ar0234_reset), NULL);
+	ret = ar0234_reset(ar0234);
 	if (ret < 0) {
 		dev_err(ar0234->dev, "%s failed to reset\n", __func__);
 		return ret;
 	}
 
 	/* PLL and MIPI config */
-	ret = ar0234_write_regs(ar0234, ar0234->pll_config->regs_pll.regs,
-				ar0234->pll_config->regs_pll.amount);
-	if (ret) {
-		dev_err(&client->dev,
+	ret = ar0234_reg_seq_write(ar0234->regmap,
+				   &ar0234->pll_config->regs_pll);
+	if (ret < 0) {
+		dev_err(ar0234->dev,
 			"%s failed to configure pll/mipi settings\n", __func__);
 		return ret;
 	}
@@ -855,10 +870,11 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	}
 
 	/* Apply default values of current frame format */
-	reg_seq = &ar0234->mode.format->reg_sequence;
-	ret = ar0234_write_regs(ar0234, reg_seq->regs, reg_seq->amount);
-	if (ret) {
-		dev_err(&client->dev, "%s failed to set mode\n", __func__);
+	ret = ar0234_reg_seq_write(ar0234->regmap,
+				   &ar0234->mode.format->reg_sequence);
+	if (ret < 0) {
+		dev_err(&client->dev, "%s failed to set frame format\n",
+			__func__);
 		return ret;
 	}
 
@@ -1273,7 +1289,7 @@ static int ar0234_probe(struct i2c_client *client)
 	ar0234->regmap =
 		devm_cci_regmap_init_i2c(client, AR0234_REG_ADDRESS_BITS);
 	if (IS_ERR(ar0234->regmap))
-		return PTR_ERR(sensor->regmap);
+		return PTR_ERR(ar0234->regmap);
 
 	/*
 	 * Enable power management. The driver supports runtime PM, but needs to
