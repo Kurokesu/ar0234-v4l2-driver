@@ -556,7 +556,8 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	}
 
-	pm_runtime_put(&client->dev);
+	pm_runtime_mark_last_busy(&client->dev);
+	pm_runtime_put_autosuspend(&client->dev);
 
 	return ret;
 }
@@ -832,8 +833,11 @@ ar0234_reg_seq_write(struct regmap *regmap,
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-	const struct ar0234_reg_sequence *reg_seq;
 	int ret;
+
+	ret = pm_runtime_resume_and_get(&client->dev);
+	if (ret < 0)
+		return ret;
 
 	/* Reset */
 	ret = ar0234_reset(ar0234);
@@ -897,12 +901,14 @@ static void ar0234_stop_streaming(struct ar0234 *ar0234)
 	ret = ar0234_mode_select(ar0234, false);
 	if (ret < 0)
 		dev_err(&client->dev, "%s failed to set stream\n", __func__);
+
+	pm_runtime_mark_last_busy(&client->dev);
+	pm_runtime_put_autosuspend(&client->dev);
 }
 
 static int ar0234_set_stream(struct v4l2_subdev *sd, int enable)
 {
 	struct ar0234 *ar0234 = to_ar0234(sd);
-	struct i2c_client *client = v4l2_get_subdevdata(sd);
 	int ret = 0;
 
 	mutex_lock(&ar0234->mutex);
@@ -912,22 +918,15 @@ static int ar0234_set_stream(struct v4l2_subdev *sd, int enable)
 	}
 
 	if (enable) {
-		ret = pm_runtime_get_sync(&client->dev);
-		if (ret < 0) {
-			pm_runtime_put_noidle(&client->dev);
-			goto err_unlock;
-		}
-
 		/*
 		* Apply default & customized values
 		* and then start streaming.
 		*/
 		ret = ar0234_start_streaming(ar0234);
 		if (ret)
-			goto err_rpm_put;
+			goto err_start_streaming;
 	} else {
 		ar0234_stop_streaming(ar0234);
-		pm_runtime_put(&client->dev);
 	}
 
 	ar0234->streaming = enable;
@@ -940,9 +939,7 @@ static int ar0234_set_stream(struct v4l2_subdev *sd, int enable)
 
 	return ret;
 
-err_rpm_put:
-	pm_runtime_put(&client->dev);
-err_unlock:
+err_start_streaming:
 	mutex_unlock(&ar0234->mutex);
 
 	return ret;
@@ -1014,7 +1011,7 @@ static int ar0234_identify_module(struct ar0234 *ar0234)
 		return dev_err_probe(ar0234->dev, -EIO,
 				     "Invalid chip id: 0x%x\n", (u16)reg_val);
 
-	dev_info(&client->dev, "Success reading chip id: 0x%x\n", (u16)reg_val);
+	dev_info(ar0234->dev, "Success reading chip id: 0x%x\n", (u16)reg_val);
 
 	return ret;
 }
