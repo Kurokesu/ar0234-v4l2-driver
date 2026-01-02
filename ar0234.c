@@ -278,13 +278,21 @@ static const struct cci_reg_sequence ar0234_1280x800_config[] = {
 };
 
 static const char *const ar0234_test_pattern_menu[] = {
-	"Disabled", "Color Bars", "Solid Color", "Grey Color Bars", "PN9",
+	"Disabled",
+	"Solid Color",
+	"Vertical Color Bars",
+	"Fade to Grey Vertical Color Bars",
+	"PN9",
+	"Walking 1s",
 };
 
-static const int ar0234_test_pattern_val[] = {
-	AR0234_TEST_PATTERN_DISABLE,	 AR0234_TEST_PATTERN_COLOR_BARS,
-	AR0234_TEST_PATTERN_SOLID_COLOR, AR0234_TEST_PATTERN_GREY_COLOR,
+static const unsigned int ar0234_test_pattern_val[] = {
+	AR0234_TEST_PATTERN_DISABLED,
+	AR0234_TEST_PATTERN_SOLID_COLOR,
+	AR0234_TEST_PATTERN_VERTICAL_COLOR_BARS,
+	AR0234_TEST_PATTERN_FADE_TO_GREY,
 	AR0234_TEST_PATTERN_PN9,
+	AR0234_TEST_PATTERN_WALKING_1S,
 };
 
 /* regulator supplies */
@@ -515,7 +523,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 				ctrl->val, NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_PATTERN,
+		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_PATTERN_MODE,
 			//	       AR0234_REG_VALUE_16BIT,
 			//	       ar0234_test_pattern_val[ctrl->val]);
 		break;
@@ -530,8 +538,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 				ar0234->mode.format->height + ctrl->val, NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN_RED:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_RED,
-			//	       AR0234_REG_VALUE_16BIT, ctrl->val);
+		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_DATA_RED,CCI_REG16(0x3072)	       AR0234_REG_VALUE_16BIT, ctrl->val);
 		break;
 	case V4L2_CID_TEST_PATTERN_GREENR:
 		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_GREENR,
