@@ -16,18 +16,16 @@
 #include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
+#include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
+#include <media/v4l2-cci.h>
 #include <media/v4l2-ctrls.h>
-#include <media/v4l2-device.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-mediabus.h>
 #include <linux/unaligned.h>
 
-#define AR0234_REG_VALUE_08BIT 1
-#define AR0234_REG_VALUE_16BIT 2
-
-#define AR0234_REG_SERIAL_FORMAT 0x31AE
+#define AR0234_REG_ADDRESS_BITS 16
 
 /* Single format code for selected link frequency */
 #define AR0234_FMT_CODE_AMOUNT 1
@@ -372,6 +370,8 @@ struct ar0234 {
 	struct ar0234_hw_config hw_config;
 	struct ar0234_pll_config const *pll_config;
 
+	struct regmap *regmap;
+
 	struct v4l2_subdev sd;
 	struct media_pad pad[NUM_PADS];
 
@@ -402,87 +402,6 @@ struct ar0234 {
 static inline struct ar0234 *to_ar0234(struct v4l2_subdev *_sd)
 {
 	return container_of(_sd, struct ar0234, sd);
-}
-
-/* Read registers up to 2 at a time */
-static int ar0234_read_reg(struct ar0234 *ar0234, u16 reg, u32 len, u32 *val)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-	struct i2c_msg msgs[2];
-	u8 addr_buf[2] = { reg >> 8, reg & 0xff };
-	u8 data_buf[4] = { 0 };
-	int ret;
-
-	if (len > 4)
-		return -EINVAL;
-
-	/* Write register address */
-	msgs[0].addr = client->addr;
-	msgs[0].flags = 0;
-	msgs[0].len = ARRAY_SIZE(addr_buf);
-	msgs[0].buf = addr_buf;
-
-	/* Read data from register */
-	msgs[1].addr = client->addr;
-	msgs[1].flags = I2C_M_RD;
-	msgs[1].len = len;
-	msgs[1].buf = &data_buf[4 - len];
-
-	ret = i2c_transfer(client->adapter, msgs, ARRAY_SIZE(msgs));
-	if (ret != ARRAY_SIZE(msgs)) {
-		pr_err("i2c_transfer returned %d\n", ret);
-		return -EIO;
-	}
-
-	*val = get_unaligned_be32(data_buf);
-
-	return 0;
-}
-
-/* Write registers up to 2 at a time */
-static int ar0234_write_reg(struct ar0234 *ar0234, u16 reg, u32 len, u32 val)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-	u8 buf[6];
-
-	if (len > 4)
-		return -EINVAL;
-
-	put_unaligned_be16(reg, buf);
-	put_unaligned_be32(val << (8 * (4 - len)), buf + 2);
-	if (i2c_master_send(client, buf, len + 2) != len + 2)
-		return -EIO;
-
-	return 0;
-}
-
-/* Write a list of registers */
-static int ar0234_write_regs(struct ar0234 *ar0234,
-			     const struct ar0234_reg *regs, u32 len)
-{
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
-	unsigned int i;
-	int ret;
-
-	for (i = 0; i < len; i++) {
-		if (regs[i].address == DELAY) {
-			usleep_range(regs[i].val * 1000,
-				     (regs[i].val + 1) * 1000);
-			continue;
-		}
-
-		ret = ar0234_write_reg(ar0234, regs[i].address, 2, regs[i].val);
-		if (ret) {
-			dev_err_ratelimited(
-				&client->dev,
-				"Failed to write reg 0x%4.4x. error = %d\n",
-				regs[i].address, ret);
-
-			return ret;
-		}
-	}
-
-	return 0;
 }
 
 static u32 ar0234_get_format_code(struct ar0234 *ar0234)
@@ -581,16 +500,16 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_ANALOGUE_GAIN:
-		ret = ar0234_write_reg(ar0234, AR0234_REG_ANALOG_GAIN,
-				       AR0234_REG_VALUE_16BIT, ctrl->val);
+		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
+				ctrl->val, NULL);
 		break;
 	case V4L2_CID_EXPOSURE:
-		ret = ar0234_write_reg(ar0234, AR0234_REG_EXPOSURE_COARSE,
-				       AR0234_REG_VALUE_16BIT, ctrl->val);
+		ret = cci_write(ar0234->regmap, AR0234_REG_EXPOSURE_COARSE,
+				ctrl->val, NULL);
 		break;
 	case V4L2_CID_DIGITAL_GAIN:
-		ret = ar0234_write_reg(ar0234, AR0234_REG_DIGITAL_GAIN,
-				       AR0234_REG_VALUE_16BIT, ctrl->val);
+		ret = cci_write(ar0234->regmap, AR0234_REG_DIGITAL_GAIN,
+				ctrl->val, NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN:
 		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_PATTERN,
@@ -618,9 +537,8 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	}
 	case V4L2_CID_VBLANK:
-		ret = ar0234_write_reg(ar0234, AR0234_REG_FRAME_LENGTH_LINES,
-				       AR0234_REG_VALUE_16BIT,
-				       ar0234->mode.format->height + ctrl->val);
+		ret = cci_write(ar0234->regmap, AR0234_REG_FRAME_LENGTH_LINES,
+				ar0234->mode.format->height + ctrl->val, NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN_RED:
 		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_RED,
@@ -906,9 +824,10 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	int ret;
 
 	/* Reset */
-	ret = ar0234_write_regs(ar0234, ar0234_reset, ARRAY_SIZE(ar0234_reset));
-	if (ret) {
-		dev_err(&client->dev, "%s failed to reset\n", __func__);
+	ret = cci_multi_reg_write(ar0234->regmap, ar0234_reset,
+				  ARRAY_SIZE(ar0234_reset), NULL);
+	if (ret < 0) {
+		dev_err(ar0234->dev, "%s failed to reset\n", __func__);
 		return ret;
 	}
 
@@ -922,18 +841,18 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	}
 
 	/* Configure lane amount */
-	ret = ar0234_write_reg(ar0234, AR0234_REG_SERIAL_FORMAT,
-			       AR0234_REG_VALUE_16BIT,
-			       (0x0200 | ar0234->hw_config.num_data_lanes));
-	if (ret) {
+	ret = cci_write(ar0234->regmap, AR0234_REG_SERIAL_FORMAT,
+			(0x0200 | ar0234->hw_config.num_data_lanes), NULL);
+	if (ret < 0) {
 		dev_err(&client->dev, "%s failed to configure lane amount\n",
 			__func__);
 		return ret;
 	}
 
 	/* Common */
-	ret = ar0234_write_regs(ar0234, common_init, ARRAY_SIZE(common_init));
-	if (ret) {
+	ret = cci_multi_reg_write(ar0234->regmap, common_init,
+				  ARRAY_SIZE(common_init), NULL);
+	if (ret < 0) {
 		dev_err(&client->dev, "%s failed to set common settings\n",
 			__func__);
 		return ret;
@@ -1069,29 +988,23 @@ static int ar0234_power_off(struct device *dev)
 /* Verify chip ID */
 static int ar0234_identify_module(struct ar0234 *ar0234)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	int ret;
-	u32 val;
+	u64 reg_val;
 
-	ret = ar0234_read_reg(ar0234, AR0234_REG_CHIP_ID,
-			      AR0234_REG_VALUE_16BIT, &val);
-	if (ret) {
-		dev_err(&client->dev, "failed to read chip id %d\n", ret);
-		return ret;
-	}
+	ret = cci_read(ar0234->regmap, AR0234_REG_CHIP_ID, &reg_val, NULL);
+	if (ret < 0)
+		return dev_err_probe(ar0234->dev, ret,
+				     "failed to read chip id\n");
 
-	if (val != AR0234_CHIP_ID && val != AR0234_CHIP_ID_MONO) {
-		dev_err(&client->dev, "chip id mismatch: %x!=%x\n",
-			AR0234_CHIP_ID, val);
-		return -EIO;
-	}
-
-	dev_info(&client->dev, "Success reading chip id: %x\n", val);
-
-	if (val == AR0234_CHIP_ID_MONO)
+	if (reg_val == AR0234_CHIP_ID_MONO)
 		ar0234->monochrome = true;
+	else if (reg_val != AR0234_CHIP_ID)
+		return dev_err_probe(ar0234->dev, -EIO,
+				     "Invalid chip id: 0x%x\n", (u16)reg_val);
 
-	return 0;
+	dev_info(&client->dev, "Success reading chip id: 0x%x\n", (u16)reg_val);
+
+	return ret;
 }
 
 static const struct v4l2_subdev_core_ops ar0234_core_ops = {
@@ -1363,8 +1276,10 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	if (ar0234_parse_hw_config(ar0234))
-		return -EINVAL;
+	ar0234->regmap =
+		devm_cci_regmap_init_i2c(client, AR0234_REG_ADDRESS_BITS);
+	if (IS_ERR(ar0234->regmap))
+		return PTR_ERR(sensor->regmap);
 
 	/*
 	 * Enable power management. The driver supports runtime PM, but needs to
