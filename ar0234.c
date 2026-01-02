@@ -849,9 +849,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 
 	/* set stream on register */
-	return ar0234_write_reg(ar0234, AR0234_REG_RESET,
-				AR0234_REG_VALUE_16BIT,
-				AR0234_REG_RESET_STREAM_ON);
+	ret = ar0234_mode_select(ar0234, true);
+	return ret;
 }
 
 static void ar0234_stop_streaming(struct ar0234 *ar0234)
@@ -859,10 +858,9 @@ static void ar0234_stop_streaming(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	int ret;
 
-	/* set stream off register */
-	ret = ar0234_write_reg(ar0234, AR0234_REG_RESET, AR0234_REG_VALUE_16BIT,
-			       AR0234_REG_RESET_STREAM_OFF);
-	if (ret)
+	/* set stream off */
+	ret = ar0234_mode_select(ar0234, false);
+	if (ret < 0)
 		dev_err(&client->dev, "%s failed to set stream\n", __func__);
 }
 
@@ -1281,15 +1279,13 @@ static int ar0234_probe(struct i2c_client *client)
 	* streaming is started, so upon power up switch the modes to:
 	* streaming -> standby
 	*/
-	ret = ar0234_write_reg(ar0234, AR0234_REG_RESET, AR0234_REG_VALUE_16BIT,
-			       AR0234_REG_RESET_STREAM_ON);
+	ret = ar0234_mode_select(ar0234, true);
 	if (ret < 0)
 		goto error_power_off;
 	usleep_range(100, 110);
 
 	/* put sensor back to standby mode */
-	ret = ar0234_write_reg(ar0234, AR0234_REG_RESET, AR0234_REG_VALUE_16BIT,
-			       AR0234_REG_RESET_STREAM_OFF);
+	ret = ar0234_mode_select(ar0234, false);
 	if (ret < 0)
 		goto error_power_off;
 	usleep_range(100, 110);
