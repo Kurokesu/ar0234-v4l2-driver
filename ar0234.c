@@ -3,7 +3,7 @@
  * A V4L2 driver for OnSemi AR0234 cameras.
  *
  * Copyright (C) 2021, Raspberry Pi (Trading) Ltd
- * Copyright (C) 2025, UAB Kurokesu
+ * Copyright (C) 2025-2026, UAB Kurokesu
  *
  * Based on Sony imx219 camera driver
  * Copyright (C) 2019, Raspberry Pi (Trading) Ltd
