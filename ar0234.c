@@ -837,6 +837,12 @@ ar0234_reg_seq_write(struct regmap *regmap,
 				   reg_sequence->amount, NULL);
 }
 
+static inline int ar0234_mode_select(struct ar0234 *ar0234, bool stream_on)
+{
+	return cci_write(ar0234->regmap, AR0234_REG_MODE_SELECT, stream_on,
+			 NULL);
+}
+
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
@@ -975,8 +981,8 @@ static int ar0234_power_on(struct device *dev)
 	}
 
 	gpiod_set_value_cansleep(ar0234->hw_config.gpio_reset, 1);
-	usleep_range(AR0234_XCLR_MIN_DELAY_US,
-		     AR0234_XCLR_MIN_DELAY_US + AR0234_XCLR_DELAY_RANGE_US);
+	usleep_range(AR0234_RESET_DELAY_MIN_US,
+		     AR0234_RESET_DELAY_MIN_US + AR0234_RESET_DELAY_RANGE_US);
 
 	return 0;
 
