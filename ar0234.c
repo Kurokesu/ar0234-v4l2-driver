@@ -13,15 +13,16 @@
 #include <linux/clk.h>
 #include <linux/delay.h>
 #include <linux/gpio/consumer.h>
-#include <linux/i2c.h>
 #include <linux/module.h>
 #include <linux/pm_runtime.h>
-#include <linux/regmap.h>
 #include <linux/regulator/consumer.h>
+
 #include <media/v4l2-cci.h>
 #include <media/v4l2-ctrls.h>
 #include <media/v4l2-event.h>
 #include <media/v4l2-fwnode.h>
+#include <media/v4l2-subdev.h>
+
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
 #define AR0234_REG_Y_ADDR_START CCI_REG16(0x3002)
