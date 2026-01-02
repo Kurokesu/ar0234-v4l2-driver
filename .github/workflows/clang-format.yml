@@ -1,0 +1,26 @@
+name: code formatting
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/clang-format.yml'
+      - '.clang-format'
+      - '**/*.c'
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  code-formatting:
+    name: code formatting
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Run clang-format style check
+        uses: jidicula/clang-format-action@v4.16.0
+        with:
+          clang-format-version: '14'

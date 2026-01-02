@@ -1,5 +1,7 @@
 # Kernel Driver for AR0234
 
+[![code formatting](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml)
+
 This guide provides detailed instructions on how to install the AR0234 kernel driver on a Linux system, specifically Raspbian.
 
 ## Prerequisites
