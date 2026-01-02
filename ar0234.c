@@ -35,12 +35,7 @@
 #define AR0234_CHIP_ID 0x0a56
 #define AR0234_CHIP_ID_MONO 0x1a56
 
-#define AR0234_REG_RESET 0x301A
-/* Bit 0 is reset */
-/* Bit 2 is stream on/off */
-#define AR0234_REG_RESET_RESET 0x00D9
-#define AR0234_REG_RESET_STREAM_OFF 0x2058
-#define AR0234_REG_RESET_STREAM_ON 0x205C
+#define AR0234_REG_IMAGE_ORIENTATION CCI_REG8(0x301D)
 
 #define AR0234_FREQ_EXTCLK 24000000
 #define AR0234_FREQ_PIXCLK_2LANE 45000000
@@ -72,10 +67,6 @@
 #define AR0234_DGTL_GAIN_MAX 0x0fff
 #define AR0234_DGTL_GAIN_DEFAULT 0x0100
 #define AR0234_DGTL_GAIN_STEP 1
-
-#define AR0234_REG_ORIENTATION 0x3040
-#define AR0234_REG_ORIENTATION_HFLIP BIT(14)
-#define AR0234_REG_ORIENTATION_VFLIP BIT(15)
 
 #define AR0234_REG_DATA_FORMAT_BITS 0x31AC
 
@@ -517,25 +508,11 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 			//	       ar0234_test_pattern_val[ctrl->val]);
 		break;
 	case V4L2_CID_HFLIP:
-	case V4L2_CID_VFLIP: {
-		u32 reg;
-
-		ret = ar0234_read_reg(ar0234, AR0234_REG_ORIENTATION,
-				      AR0234_REG_VALUE_16BIT, &reg);
-		if (ret)
-			break;
-
-		reg &= ~(AR0234_REG_ORIENTATION_HFLIP |
-			 AR0234_REG_ORIENTATION_VFLIP);
-		if (ar0234->hflip->val)
-			reg |= AR0234_REG_ORIENTATION_HFLIP;
-		if (ar0234->vflip->val)
-			reg |= AR0234_REG_ORIENTATION_VFLIP;
-
-		ret = ar0234_write_reg(ar0234, AR0234_REG_ORIENTATION,
-				       AR0234_REG_VALUE_16BIT, reg);
+	case V4L2_CID_VFLIP:
+		ret = cci_write(ar0234->regmap, AR0234_REG_IMAGE_ORIENTATION,
+				(ar0234->vflip->val << 1) | ar0234->hflip->val,
+				NULL);
 		break;
-	}
 	case V4L2_CID_VBLANK:
 		ret = cci_write(ar0234->regmap, AR0234_REG_FRAME_LENGTH_LINES,
 				ar0234->mode.format->height + ctrl->val, NULL);
