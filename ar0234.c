@@ -815,7 +815,7 @@ static int ar0234_get_selection(struct v4l2_subdev *sd,
 	return -EINVAL;
 }
 
-static int ar0234_reset(struct ar0234 *ar0234)
+static int ar0234_soft_reset(struct ar0234 *ar0234)
 {
 	int ret;
 
@@ -854,7 +854,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 
 	/* Reset */
-	ret = ar0234_reset(ar0234);
+	ret = ar0234_soft_reset(ar0234);
 	if (ret < 0) {
 		dev_err(ar0234->dev, "%s failed to reset\n", __func__);
 		return ret;
