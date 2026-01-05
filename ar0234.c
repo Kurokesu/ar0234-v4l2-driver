@@ -34,6 +34,7 @@
 #define AR0234_REG_RESET CCI_REG16(0x301A)
 #define AR0234_REG_MODE_SELECT CCI_REG8(0x301C)
 #define AR0234_REG_IMAGE_ORIENTATION CCI_REG8(0x301D)
+#define AR0234_REG_GROUPED_PARAMETER_HOLD CCI_REG8(0x3022)
 #define AR0234_REG_VT_PIX_CLK_DIV CCI_REG16(0x302A)
 #define AR0234_REG_VT_SYS_CLK_DIV CCI_REG16(0x302C)
 #define AR0234_REG_PRE_PLL_CLK_DIV CCI_REG16(0x302E)
@@ -57,6 +58,7 @@
 #define AR0234_REG_Y_ODD_INC CCI_REG16(0x30A6)
 #define AR0234_REG_DIGITAL_TEST CCI_REG16(0x30B0)
 #define AR0234_REG_TEMPSENS_CTRL CCI_REG16(0x30B4)
+#define AR0234_REG_MFR_30BA CCI_REG16(0x30BA)
 #define AR0234_REG_AE_LUMA_TARGET CCI_REG16(0x3102)
 #define AR0234_REG_DELTA_DK_CONTROL CCI_REG16(0x3180)
 #define AR0234_REG_DATA_FORMAT_BITS CCI_REG16(0x31AC)
@@ -97,6 +99,7 @@
 #define AR0234_ANA_GAIN_MAX 232
 #define AR0234_ANA_GAIN_STEP 1
 #define AR0234_ANA_GAIN_DEFAULT 0x0
+#define AR0234_MFR_30BA_DEF 0x7622
 
 /* Digital gain control */
 #define AR0234_DGTL_GAIN_MIN 0x0100
@@ -183,6 +186,7 @@ struct ar0234_format {
 
 struct ar0234_mode {
 	struct ar0234_format const *format;
+	u16 mfr_30ba;
 };
 
 /*
@@ -446,6 +450,7 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 	fmt->field = V4L2_FIELD_NONE;
 
 	ar0234->mode.format = &ar0234_formats[0];
+	ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEF;
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -493,6 +498,47 @@ static void ar0234_adjust_exposure_range(struct ar0234 *ar0234)
 				 exposure_max);
 }
 
+static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
+{
+	int ret;
+	u16 mfr_30ba_val;
+
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	    AR0234_FREQ_PIXCLK_2LANE) {
+		if (analog_gain < 0x36) {
+			mfr_30ba_val = 0x7626;
+		} else {
+			mfr_30ba_val = 0x7620;
+		}
+	} else {
+		if (analog_gain < 0x20) {
+			mfr_30ba_val = 0x7622;
+		} else if (analog_gain < 0x3A) {
+			mfr_30ba_val = 0x7621;
+		} else {
+			mfr_30ba_val = 0x7620;
+		}
+	}
+
+	if (ar0234->mode.mfr_30ba != mfr_30ba_val) {
+		ret = cci_write(ar0234->regmap,
+				AR0234_REG_GROUPED_PARAMETER_HOLD, true, NULL);
+		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
+				mfr_30ba_val, &ret);
+		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
+				analog_gain, &ret);
+		ret = cci_write(ar0234->regmap,
+				AR0234_REG_GROUPED_PARAMETER_HOLD, false, &ret);
+
+		ar0234->mode.mfr_30ba = mfr_30ba_val;
+	} else {
+		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
+				analog_gain, NULL);
+	}
+
+	return ret;
+}
+
 static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ar0234 *ar0234 =
@@ -512,8 +558,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_ANALOGUE_GAIN:
-		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
-				ctrl->val, NULL);
+		ret = ar0234_set_analog_gain(ar0234, ctrl->val);
 		break;
 	case V4L2_CID_EXPOSURE:
 		ret = cci_write(ar0234->regmap, AR0234_REG_EXPOSURE_COARSE,
