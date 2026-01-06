@@ -95,10 +95,10 @@
 #define AR0234_EXPOSURE_STEP 1
 
 /* Analog gain control */
-#define AR0234_ANA_GAIN_MIN 0
-#define AR0234_ANA_GAIN_MAX 232
+#define AR0234_ANA_GAIN_MIN 0x0D
+#define AR0234_ANA_GAIN_MAX 0x40
 #define AR0234_ANA_GAIN_STEP 1
-#define AR0234_ANA_GAIN_DEFAULT 0x0
+#define AR0234_ANA_GAIN_DEFAULT 0x0E
 #define AR0234_MFR_30BA_DEF 0x7622
 
 /* Digital gain control */
