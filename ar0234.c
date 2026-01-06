@@ -259,7 +259,6 @@ static const struct cci_reg_sequence common_init[] = {
 	{ CCI_REG16(0x30F0), 0x2283 },
 	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
 	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
-	{ CCI_REG16(0x30BA), 0x7626 },
 	{ AR0234_REG_RESET, 0x205C },
 	{ AR0234_REG_SMIA_TEST, 0x1982 },
 };
@@ -450,7 +449,6 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 	fmt->field = V4L2_FIELD_NONE;
 
 	ar0234->mode.format = &ar0234_formats[0];
-	ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEF;
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -503,6 +501,9 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	int ret;
 	u16 mfr_30ba_val;
 
+	/* 0x30BA register value lookup based on PIXCLK frequency
+	 * and analog gain level.
+	 */
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
 		if (analog_gain < 0x36) {
@@ -520,6 +521,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 		}
 	}
 
+	/* Use grouped parameter hold when 0x30BA needs to be updated. */
 	if (ar0234->mode.mfr_30ba != mfr_30ba_val) {
 		ret = cci_write(ar0234->regmap,
 				AR0234_REG_GROUPED_PARAMETER_HOLD, true, NULL);
@@ -530,6 +532,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 		ret = cci_write(ar0234->regmap,
 				AR0234_REG_GROUPED_PARAMETER_HOLD, false, &ret);
 
+		/* Update cached value. */
 		ar0234->mode.mfr_30ba = mfr_30ba_val;
 	} else {
 		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
@@ -883,6 +886,25 @@ ar0234_reg_seq_write(struct regmap *regmap,
 				   reg_sequence->amount, NULL);
 }
 
+static int ar0234_mfr_30ba_init(struct ar0234 *ar0234)
+{
+	int ret = 0;
+
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	    AR0234_FREQ_PIXCLK_45MHZ) {
+		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA, 0x7626,
+				NULL);
+		ar0234->mode.mfr_30ba = 0x7626;
+	} else {
+		/* Default value after reset. No need to write to register.
+		 * Just update the cached value.
+		 */
+		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEF;
+	}
+
+	return ret;
+}
+
 static inline int ar0234_mode_select(struct ar0234 *ar0234, bool stream_on)
 {
 	return cci_write(ar0234->regmap, AR0234_REG_MODE_SELECT, stream_on,
@@ -930,6 +952,12 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		dev_err(&client->dev, "%s failed to set common settings\n",
 			__func__);
 		return ret;
+	}
+
+	/* Initialize 0x30BA handling. */
+	ret = ar0234_mfr_30ba_init(ar0234);
+	if (ret < 0) {
+		dev_err(&client->dev, "%s failed to set 0x30BA\n", __func__);
 	}
 
 	/* Apply default values of current frame format */
