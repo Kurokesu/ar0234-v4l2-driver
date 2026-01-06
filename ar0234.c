@@ -80,8 +80,8 @@
 
 /* Sensor frequencies */
 #define AR0234_FREQ_EXTCLK 24000000
-#define AR0234_FREQ_PIXCLK_2LANE 45000000
-#define AR0234_FREQ_PIXCLK_4LANE 90000000
+#define AR0234_FREQ_PIXCLK_45MHZ 45000000
+#define AR0234_FREQ_PIXCLK_90MHZ 90000000
 #define AR0234_FREQ_LINK_8BIT 360000000
 #define AR0234_FREQ_LINK_10BIT 450000000
 
@@ -369,8 +369,8 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 
 /* Pixel clock frequencies are based on lane amount */
 static const u32 ar0234_freq_pixclk[] = {
-	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_2LANE,
-	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_4LANE,
+	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_45MHZ,
+	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_90MHZ,
 };
 
 struct ar0234_hw_config {
@@ -504,7 +504,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	u16 mfr_30ba_val;
 
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
-	    AR0234_FREQ_PIXCLK_2LANE) {
+	    AR0234_FREQ_PIXCLK_45MHZ) {
 		if (analog_gain < 0x36) {
 			mfr_30ba_val = 0x7626;
 		} else {
