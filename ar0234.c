@@ -894,11 +894,12 @@ static int ar0234_mfr_30ba_init(struct ar0234 *ar0234)
 
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
-		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA, 0x7626,
-				NULL);
-		ar0234->mode.mfr_30ba = 0x7626;
+		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
+				AR0234_MFR_30BA_GAIN_BITS(6), NULL);
+		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
 	} else {
-		/* Default value after reset. No need to write to register.
+		/* 
+		 * Default value after reset. No need to write to register.
 		 * Just update the cached value.
 		 */
 		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEFAULT;
