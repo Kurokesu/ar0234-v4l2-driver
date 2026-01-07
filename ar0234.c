@@ -99,7 +99,8 @@
 #define AR0234_ANA_GAIN_MAX 0x40
 #define AR0234_ANA_GAIN_STEP 1
 #define AR0234_ANA_GAIN_DEFAULT 0x0E
-#define AR0234_MFR_30BA_DEF 0x7622
+#define AR0234_MFR_30BA_DEFAULT 0x7622
+#define AR0234_MFR_30BA_GAIN_BITS (_val)(0x7620 | (_val))
 
 /* Digital gain control */
 #define AR0234_DGTL_GAIN_MIN 0x0100
@@ -501,23 +502,24 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	int ret;
 	u16 mfr_30ba_val;
 
-	/* 0x30BA register value lookup based on PIXCLK frequency
+	/*
+	 * 0x30BA register value lookup based on PIXCLK frequency
 	 * and analog gain level.
 	 */
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
 		if (analog_gain < 0x36) {
-			mfr_30ba_val = 0x7626;
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(6);
 		} else {
-			mfr_30ba_val = 0x7620;
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
 		}
 	} else {
 		if (analog_gain < 0x20) {
-			mfr_30ba_val = 0x7622;
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(2);
 		} else if (analog_gain < 0x3A) {
-			mfr_30ba_val = 0x7621;
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(1);
 		} else {
-			mfr_30ba_val = 0x7620;
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
 		}
 	}
 
@@ -899,7 +901,7 @@ static int ar0234_mfr_30ba_init(struct ar0234 *ar0234)
 		/* Default value after reset. No need to write to register.
 		 * Just update the cached value.
 		 */
-		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEF;
+		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEFAULT;
 	}
 
 	return ret;
