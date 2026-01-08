@@ -245,23 +245,27 @@ static const struct cci_reg_sequence common_init[] = {
 	{ AR0234_REG_READ_MODE, 0x0000 },
 	{ AR0234_REG_COMPANDING, 0x0000 },
 	{ AR0234_REG_SEQ_CTRL_PORT, 0x8050 },
-	//	{ AR0234_REG_SEQ_DATA_PORT, 0x9237 },
+	{ AR0234_REG_SEQ_DATA_PORT, 0x9237 },
 	{ CCI_REG16(0x3096), 0x0280 },
 	{ AR0234_REG_PIX_DEF_ID, 0x0003 },
 	{ CCI_REG16(0x3F4C), 0x121F },
 	{ CCI_REG16(0x3F4E), 0x121F },
 	{ CCI_REG16(0x3F50), 0x0B81 },
-	{ AR0234_REG_SEQ_CTRL_PORT, 0x81BA },
-	{ AR0234_REG_SEQ_DATA_PORT, 0x3D02 },
 	{ CCI_REG16(0x3ED2), 0xFA96 },
 	{ AR0234_REG_DELTA_DK_CONTROL, 0x824F },
-	{ CCI_REG16(0x3ECC), 0x0D42 },
-	{ CCI_REG16(0x3ECC), 0x0D42 },
+	{ CCI_REG16(0x3ECC), 0x0C42 },
+	{ CCI_REG16(0x3ECC), 0x0C42 },
 	{ CCI_REG16(0x30F0), 0x2283 },
 	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
 	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
 	{ AR0234_REG_RESET, 0x205C },
 	{ AR0234_REG_SMIA_TEST, 0x1982 },
+};
+
+/* Recommended manufacturer settings for 45MHz pixel clock */
+static const struct cci_reg_sequence pixclk_45mhz_mfr_settings[] = {
+	{ AR0234_REG_SEQ_CTRL_PORT, 0x81BA },
+	{ AR0234_REG_SEQ_DATA_PORT, 0x3D02 },
 };
 
 static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
@@ -888,14 +892,20 @@ ar0234_reg_seq_write(struct regmap *regmap,
 				   reg_sequence->amount, NULL);
 }
 
-static int ar0234_mfr_30ba_init(struct ar0234 *ar0234)
+static int ar0234_pixclk_config(struct ar0234 *ar0234)
 {
 	int ret = 0;
 
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
+		ret = cci_multi_reg_write(ar0234->regmap,
+					  pixclk_45mhz_mfr_settings,
+					  ARRAY_SIZE(pixclk_45mhz_mfr_settings),
+					  NULL);
+
 		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
-				AR0234_MFR_30BA_GAIN_BITS(6), NULL);
+				AR0234_MFR_30BA_GAIN_BITS(6), &ret);
+
 		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
 	} else {
 		/* 
@@ -957,10 +967,12 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 	}
 
-	/* Initialize 0x30BA handling. */
-	ret = ar0234_mfr_30ba_init(ar0234);
+	/* Configure recommended pixclk settings */
+	ret = ar0234_pixclk_config(ar0234);
 	if (ret < 0) {
-		dev_err(&client->dev, "%s failed to set 0x30BA\n", __func__);
+		dev_err(&client->dev,
+			"%s failed to apply recommended pixclk settings\n",
+			__func__);
 	}
 
 	/* Apply default values of current frame format */
