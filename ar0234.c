@@ -34,6 +34,7 @@
 #define AR0234_REG_RESET CCI_REG16(0x301A)
 #define AR0234_REG_MODE_SELECT CCI_REG8(0x301C)
 #define AR0234_REG_IMAGE_ORIENTATION CCI_REG8(0x301D)
+#define AR0234_REG_GROUPED_PARAMETER_HOLD CCI_REG8(0x3022)
 #define AR0234_REG_VT_PIX_CLK_DIV CCI_REG16(0x302A)
 #define AR0234_REG_VT_SYS_CLK_DIV CCI_REG16(0x302C)
 #define AR0234_REG_PRE_PLL_CLK_DIV CCI_REG16(0x302E)
@@ -57,6 +58,7 @@
 #define AR0234_REG_Y_ODD_INC CCI_REG16(0x30A6)
 #define AR0234_REG_DIGITAL_TEST CCI_REG16(0x30B0)
 #define AR0234_REG_TEMPSENS_CTRL CCI_REG16(0x30B4)
+#define AR0234_REG_MFR_30BA CCI_REG16(0x30BA)
 #define AR0234_REG_AE_LUMA_TARGET CCI_REG16(0x3102)
 #define AR0234_REG_DELTA_DK_CONTROL CCI_REG16(0x3180)
 #define AR0234_REG_DATA_FORMAT_BITS CCI_REG16(0x31AC)
@@ -78,8 +80,8 @@
 
 /* Sensor frequencies */
 #define AR0234_FREQ_EXTCLK 24000000
-#define AR0234_FREQ_PIXCLK_2LANE 45000000
-#define AR0234_FREQ_PIXCLK_4LANE 90000000
+#define AR0234_FREQ_PIXCLK_45MHZ 45000000
+#define AR0234_FREQ_PIXCLK_90MHZ 90000000
 #define AR0234_FREQ_LINK_8BIT 360000000
 #define AR0234_FREQ_LINK_10BIT 450000000
 
@@ -93,10 +95,12 @@
 #define AR0234_EXPOSURE_STEP 1
 
 /* Analog gain control */
-#define AR0234_ANA_GAIN_MIN 0
-#define AR0234_ANA_GAIN_MAX 232
+#define AR0234_ANA_GAIN_MIN 0x0D
+#define AR0234_ANA_GAIN_MAX 0x40
 #define AR0234_ANA_GAIN_STEP 1
-#define AR0234_ANA_GAIN_DEFAULT 0x0
+#define AR0234_ANA_GAIN_DEFAULT 0x0E
+#define AR0234_MFR_30BA_GAIN_BITS(_val) (0x7620 | (_val))
+#define AR0234_MFR_30BA_DEFAULT AR0234_MFR_30BA_GAIN_BITS(2)
 
 /* Digital gain control */
 #define AR0234_DGTL_GAIN_MIN 0x0100
@@ -183,6 +187,7 @@ struct ar0234_format {
 
 struct ar0234_mode {
 	struct ar0234_format const *format;
+	u16 mfr_30ba;
 };
 
 /*
@@ -255,7 +260,6 @@ static const struct cci_reg_sequence common_init[] = {
 	{ CCI_REG16(0x30F0), 0x2283 },
 	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
 	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
-	{ CCI_REG16(0x30BA), 0x7626 },
 	{ AR0234_REG_RESET, 0x205C },
 	{ AR0234_REG_SMIA_TEST, 0x1982 },
 };
@@ -365,8 +369,8 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 
 /* Pixel clock frequencies are based on lane amount */
 static const u32 ar0234_freq_pixclk[] = {
-	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_2LANE,
-	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_4LANE,
+	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_45MHZ,
+	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_90MHZ,
 };
 
 struct ar0234_hw_config {
@@ -493,6 +497,53 @@ static void ar0234_adjust_exposure_range(struct ar0234 *ar0234)
 				 exposure_max);
 }
 
+static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
+{
+	int ret;
+	u16 mfr_30ba_val;
+
+	/*
+	 * 0x30BA register value lookup based on PIXCLK frequency
+	 * and analog gain level.
+	 */
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	    AR0234_FREQ_PIXCLK_45MHZ) {
+		if (analog_gain < 0x36) {
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(6);
+		} else {
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
+		}
+	} else {
+		if (analog_gain < 0x20) {
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(2);
+		} else if (analog_gain < 0x3A) {
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(1);
+		} else {
+			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
+		}
+	}
+
+	/* Use grouped parameter hold when 0x30BA needs to be updated. */
+	if (ar0234->mode.mfr_30ba != mfr_30ba_val) {
+		ret = cci_write(ar0234->regmap,
+				AR0234_REG_GROUPED_PARAMETER_HOLD, true, NULL);
+		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
+				mfr_30ba_val, &ret);
+		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
+				analog_gain, &ret);
+		ret = cci_write(ar0234->regmap,
+				AR0234_REG_GROUPED_PARAMETER_HOLD, false, &ret);
+
+		/* Update cached value. */
+		ar0234->mode.mfr_30ba = mfr_30ba_val;
+	} else {
+		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
+				analog_gain, NULL);
+	}
+
+	return ret;
+}
+
 static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 {
 	struct ar0234 *ar0234 =
@@ -512,8 +563,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_ANALOGUE_GAIN:
-		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
-				ctrl->val, NULL);
+		ret = ar0234_set_analog_gain(ar0234, ctrl->val);
 		break;
 	case V4L2_CID_EXPOSURE:
 		ret = cci_write(ar0234->regmap, AR0234_REG_EXPOSURE_COARSE,
@@ -838,6 +888,26 @@ ar0234_reg_seq_write(struct regmap *regmap,
 				   reg_sequence->amount, NULL);
 }
 
+static int ar0234_mfr_30ba_init(struct ar0234 *ar0234)
+{
+	int ret = 0;
+
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	    AR0234_FREQ_PIXCLK_45MHZ) {
+		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
+				AR0234_MFR_30BA_GAIN_BITS(6), NULL);
+		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
+	} else {
+		/* 
+		 * Default value after reset. No need to write to register.
+		 * Just update the cached value.
+		 */
+		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEFAULT;
+	}
+
+	return ret;
+}
+
 static inline int ar0234_mode_select(struct ar0234 *ar0234, bool stream_on)
 {
 	return cci_write(ar0234->regmap, AR0234_REG_MODE_SELECT, stream_on,
@@ -885,6 +955,12 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		dev_err(&client->dev, "%s failed to set common settings\n",
 			__func__);
 		return ret;
+	}
+
+	/* Initialize 0x30BA handling. */
+	ret = ar0234_mfr_30ba_init(ar0234);
+	if (ret < 0) {
+		dev_err(&client->dev, "%s failed to set 0x30BA\n", __func__);
 	}
 
 	/* Apply default values of current frame format */
