@@ -257,7 +257,6 @@ static const struct cci_reg_sequence common_init[] = {
 	{ CCI_REG16(0x30F0), 0x2283 },
 	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
 	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
-	{ AR0234_REG_RESET, 0x205C },
 	{ AR0234_REG_SMIA_TEST, 0x1982 },
 };
 
