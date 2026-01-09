@@ -94,14 +94,26 @@ To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
-### Sensor configurations
+### Sensor output formats
 
-| link frequency | data rate per lane | lanes | bit depth | width | height | maximum framerate |
+| Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
 |---|---|---|---|---|---|---|
-| 360MHz | 720 Mbps | 2 | 8 | 1280 | 800 | 90 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 1280 | 800 | 90 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 1280 | 800 | 180 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 1280 | 800 | 180 fps |
+| **960×600 (2×2 binned)** | | | | | | |
+| 360MHz | 720 Mbps | 2 | 8 | 960 | 600 | 119 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 960 | 600 | 119 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 238 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 238 fps |
+| **HD 720p (sensor crop)** | | | | | | |
+| 360MHz | 720 Mbps | 2 | 8 | 1280 | 720 | 100 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 1280 | 720 | 100 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 1280 | 720 | 200 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 1280 | 720 | 200 fps |
+| **Full HD 1080p (sensor crop)** | | | | | | |
+| 360MHz | 720 Mbps | 2 | 8 | 1920 | 1080 | 67 fps |
+| 450MHz | 900 Mbps | 2 | 10 | 1920 | 1080 | 67 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 1920 | 1080 | 134 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 1920 | 1080 | 134 fps |
+| **1920×1200 (full sensor resolution)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
@@ -279,7 +291,9 @@ You should see output similar to this (depending on your link-frequency and lane
 Available cameras
 -----------------
 0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0234@10)
-    Modes: 'SGRBG10_CSI2P' : 1280x800 [180.25 fps - (314, 190)/1280x800 crop]
+    Modes: 'SGRBG10_CSI2P' : 960x600 [238.78 fps - (0, 0)/1920x1200 crop]
+                             1280x720 [199.84 fps - (320, 240)/1280x720 crop]
+                             1920x1080 [134.19 fps - (60, 0)/1920x1080 crop]
                              1920x1200 [120.95 fps - (0, 0)/1920x1200 crop]
 ```
 
