@@ -113,14 +113,14 @@ dtoverlay=ar0234,link-frequency=360000000
 | 450MHz | 900 Mbps | 2 | 10 | 1920 | 1080 | 67 fps |
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1080 | 134 fps |
 | 450MHz | 900 Mbps | 4 | 10 | 1920 | 1080 | 134 fps |
-| **1920×1200 (full sensor resolution)** | | | | | | |
+| **1920×1200 (full resolution)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
 | 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
 > [!TIP]
-> You can combine options. Example: cam0 + 4 lanes + 360 MHz:
+> You can combine options. Example `cam0 + 4 lanes + 360 MHz`:
 > ```
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
