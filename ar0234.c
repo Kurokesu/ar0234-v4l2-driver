@@ -918,7 +918,7 @@ static int ar0234_soft_reset(struct ar0234 *ar0234)
 	/* 20ms */
 	usleep_range(20000, 21000);
 
-	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, 0x00D9, NULL);
+	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, 0x0001, NULL);
 
 	/* 200ms */
 	usleep_range(200000, 201000);
