@@ -277,6 +277,15 @@ static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
+static const struct cci_reg_sequence ar0234_1080p_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 68 },
+	{ AR0234_REG_X_ADDR_START, 8 },
+	{ AR0234_REG_Y_ADDR_END, 1147 },
+	{ AR0234_REG_X_ADDR_END, 1927 },
+	{ AR0234_REG_X_ODD_INC, 0x0001 },
+	{ AR0234_REG_Y_ODD_INC, 0x0001 },
+};
+
 static const struct cci_reg_sequence ar0234_720p_config[] = {
 	{ AR0234_REG_Y_ADDR_START, 248 },
 	{ AR0234_REG_X_ADDR_START, 328 },
@@ -324,6 +333,17 @@ static const struct ar0234_format ar0234_formats[] = {
 			.height = 1200,
 		},
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
+	},
+	{
+		.width = 1920,
+		.height = 1080,
+		.crop = {
+			.left = AR0234_PIXEL_ARRAY_LEFT + 60,
+			.top = AR0234_PIXEL_ARRAY_TOP,
+			.width = 1920,
+			.height = 1080,
+		},
+		.reg_sequence = AR0234_REG_SEQ(ar0234_1080p_config),
 	},
 	{
 		.width = 1280,
