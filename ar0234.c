@@ -277,11 +277,11 @@ static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
-static const struct cci_reg_sequence ar0234_1280x800_config[] = {
-	{ AR0234_REG_Y_ADDR_START, 0x00d0 },
-	{ AR0234_REG_X_ADDR_START, 0x0148 },
-	{ AR0234_REG_Y_ADDR_END, 0x03ef },
-	{ AR0234_REG_X_ADDR_END, 0x0647 },
+static const struct cci_reg_sequence ar0234_720p_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 248 },
+	{ AR0234_REG_X_ADDR_START, 328 },
+	{ AR0234_REG_Y_ADDR_END, 967 },
+	{ AR0234_REG_X_ADDR_END, 1607 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
@@ -327,14 +327,14 @@ static const struct ar0234_format ar0234_formats[] = {
 	},
 	{
 		.width = 1280,
-		.height = 800,
+		.height = 720,
 		.crop = {
-			.left = 320,
-			.top = 200,
+			.left = AR0234_PIXEL_ARRAY_LEFT + 320,
+			.top = AR0234_PIXEL_ARRAY_TOP + 240,
 			.width = 1280,
-			.height = 800,
+			.height = 720,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_1280x800_config),
+		.reg_sequence = AR0234_REG_SEQ(ar0234_720p_config),
 	},
 };
 
