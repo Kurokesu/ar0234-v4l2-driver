@@ -270,36 +270,36 @@ static const struct cci_reg_sequence pixclk_45mhz_mfr_settings[] = {
 static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
 	{ AR0234_REG_Y_ADDR_START, 0x0008 },
 	{ AR0234_REG_X_ADDR_START, 0x0008 },
-	{ AR0234_REG_Y_ADDR_END, 0x04b7 },
+	{ AR0234_REG_Y_ADDR_END, 0x04B7 },
 	{ AR0234_REG_X_ADDR_END, 0x0787 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
 static const struct cci_reg_sequence ar0234_1080p_config[] = {
-	{ AR0234_REG_Y_ADDR_START, 68 },
-	{ AR0234_REG_X_ADDR_START, 8 },
-	{ AR0234_REG_Y_ADDR_END, 1147 },
-	{ AR0234_REG_X_ADDR_END, 1927 },
+	{ AR0234_REG_Y_ADDR_START, 0x0044 },
+	{ AR0234_REG_X_ADDR_START, 0x0008 },
+	{ AR0234_REG_Y_ADDR_END, 0x047B },
+	{ AR0234_REG_X_ADDR_END, 0x0787 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
 static const struct cci_reg_sequence ar0234_720p_config[] = {
-	{ AR0234_REG_Y_ADDR_START, 248 },
-	{ AR0234_REG_X_ADDR_START, 328 },
-	{ AR0234_REG_Y_ADDR_END, 967 },
-	{ AR0234_REG_X_ADDR_END, 1607 },
+	{ AR0234_REG_Y_ADDR_START, 0x00F8 },
+	{ AR0234_REG_X_ADDR_START, 0x0148 },
+	{ AR0234_REG_Y_ADDR_END, 0x03C7 },
+	{ AR0234_REG_X_ADDR_END, 0x0647 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
 /* Binned 2x2 */
 static const struct cci_reg_sequence ar0234_960x600_config[] = {
-	{ AR0234_REG_Y_ADDR_START, 8 },
-	{ AR0234_REG_X_ADDR_START, 8 },
-	{ AR0234_REG_Y_ADDR_END, 1207 },
-	{ AR0234_REG_X_ADDR_END, 1927 },
+	{ AR0234_REG_Y_ADDR_START, 0x0008 },
+	{ AR0234_REG_X_ADDR_START, 0x0008 },
+	{ AR0234_REG_Y_ADDR_END, 0x04B7 },
+	{ AR0234_REG_X_ADDR_END, 0x0787 },
 	{ AR0234_REG_X_ODD_INC, 0x0003 },
 	{ AR0234_REG_Y_ODD_INC, 0x0003 },
 	{ AR0234_REG_READ_MODE, 0x3000 },
