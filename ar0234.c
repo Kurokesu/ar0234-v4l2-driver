@@ -125,9 +125,9 @@
 #define AR0234_TEST_PATTERN_WALKING_1S 256
 
 /* Native and active pixel array sizes */
-#define AR0234_NATIVE_WIDTH 1484U
-#define AR0234_NATIVE_HEIGHT 856U
-#define AR0234_PIXEL_ARRAY_LEFT 6U
+#define AR0234_NATIVE_WIDTH 1940U
+#define AR0234_NATIVE_HEIGHT 1220U
+#define AR0234_PIXEL_ARRAY_LEFT 10U
 #define AR0234_PIXEL_ARRAY_TOP 10U
 #define AR0234_PIXEL_ARRAY_WIDTH 1920U
 #define AR0234_PIXEL_ARRAY_HEIGHT 1200U
@@ -242,7 +242,6 @@ static const struct cci_reg_sequence common_init[] = {
 	{ AR0234_REG_DIGITAL_TEST, 0x0028 },
 	{ AR0234_REG_DATAPATH_SELECT, 0x9010 },
 	{ AR0234_REG_OPERATION_MODE_CTRL, 0x0003 },
-	{ AR0234_REG_READ_MODE, 0x0000 },
 	{ AR0234_REG_COMPANDING, 0x0000 },
 	{ AR0234_REG_SEQ_CTRL_PORT, 0x8050 },
 	{ AR0234_REG_SEQ_DATA_PORT, 0x9237 },
@@ -258,7 +257,6 @@ static const struct cci_reg_sequence common_init[] = {
 	{ CCI_REG16(0x30F0), 0x2283 },
 	{ AR0234_REG_AE_LUMA_TARGET, 0x5000 },
 	{ AR0234_REG_TEMPSENS_CTRL, 0x0011 },
-	{ AR0234_REG_RESET, 0x205C },
 	{ AR0234_REG_SMIA_TEST, 0x1982 },
 };
 
@@ -268,22 +266,43 @@ static const struct cci_reg_sequence pixclk_45mhz_mfr_settings[] = {
 	{ AR0234_REG_SEQ_DATA_PORT, 0x3D02 },
 };
 
+/* Full sensor resolution */
 static const struct cci_reg_sequence ar0234_1920x1200_config[] = {
 	{ AR0234_REG_Y_ADDR_START, 0x0008 },
 	{ AR0234_REG_X_ADDR_START, 0x0008 },
-	{ AR0234_REG_Y_ADDR_END, 0x04b7 },
+	{ AR0234_REG_Y_ADDR_END, 0x04B7 },
 	{ AR0234_REG_X_ADDR_END, 0x0787 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
 };
 
-static const struct cci_reg_sequence ar0234_1280x800_config[] = {
-	{ AR0234_REG_Y_ADDR_START, 0x00d0 },
+static const struct cci_reg_sequence ar0234_1080p_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 0x0044 },
+	{ AR0234_REG_X_ADDR_START, 0x0008 },
+	{ AR0234_REG_Y_ADDR_END, 0x047B },
+	{ AR0234_REG_X_ADDR_END, 0x0787 },
+	{ AR0234_REG_X_ODD_INC, 0x0001 },
+	{ AR0234_REG_Y_ODD_INC, 0x0001 },
+};
+
+static const struct cci_reg_sequence ar0234_720p_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 0x00F8 },
 	{ AR0234_REG_X_ADDR_START, 0x0148 },
-	{ AR0234_REG_Y_ADDR_END, 0x03ef },
+	{ AR0234_REG_Y_ADDR_END, 0x03C7 },
 	{ AR0234_REG_X_ADDR_END, 0x0647 },
 	{ AR0234_REG_X_ODD_INC, 0x0001 },
 	{ AR0234_REG_Y_ODD_INC, 0x0001 },
+};
+
+/* Binned 2x2 */
+static const struct cci_reg_sequence ar0234_960x600_config[] = {
+	{ AR0234_REG_Y_ADDR_START, 0x0008 },
+	{ AR0234_REG_X_ADDR_START, 0x0008 },
+	{ AR0234_REG_Y_ADDR_END, 0x04B7 },
+	{ AR0234_REG_X_ADDR_END, 0x0787 },
+	{ AR0234_REG_X_ODD_INC, 0x0003 },
+	{ AR0234_REG_Y_ODD_INC, 0x0003 },
+	{ AR0234_REG_READ_MODE, 0x3000 },
 };
 
 static const char *const ar0234_test_pattern_menu[] = {
@@ -326,15 +345,37 @@ static const struct ar0234_format ar0234_formats[] = {
 		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
 	},
 	{
-		.width = 1280,
-		.height = 800,
+		.width = 1920,
+		.height = 1080,
 		.crop = {
-			.left = 320,
-			.top = 200,
-			.width = 1280,
-			.height = 800,
+			.left = AR0234_PIXEL_ARRAY_LEFT + 60,
+			.top = AR0234_PIXEL_ARRAY_TOP,
+			.width = 1920,
+			.height = 1080,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_1280x800_config),
+		.reg_sequence = AR0234_REG_SEQ(ar0234_1080p_config),
+	},
+	{
+		.width = 1280,
+		.height = 720,
+		.crop = {
+			.left = AR0234_PIXEL_ARRAY_LEFT + 320,
+			.top = AR0234_PIXEL_ARRAY_TOP + 240,
+			.width = 1280,
+			.height = 720,
+		},
+		.reg_sequence = AR0234_REG_SEQ(ar0234_720p_config),
+	},
+	{
+		.width = 960,
+		.height = 600,
+		.crop = {
+			.left = AR0234_PIXEL_ARRAY_LEFT,
+			.top = AR0234_PIXEL_ARRAY_TOP,
+			.width = 1920,
+			.height = 1200,
+		},
+		.reg_sequence = AR0234_REG_SEQ(ar0234_960x600_config),
 	},
 };
 
@@ -876,7 +917,7 @@ static int ar0234_soft_reset(struct ar0234 *ar0234)
 	/* 20ms */
 	usleep_range(20000, 21000);
 
-	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, 0x00D9, NULL);
+	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, 0x0001, NULL);
 
 	/* 200ms */
 	usleep_range(200000, 201000);
