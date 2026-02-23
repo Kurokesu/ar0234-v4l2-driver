@@ -10,12 +10,14 @@ This guide provides detailed instructions on how to install the AR0234 kernel dr
    
 ## Installation Steps
 
-### Development tools
+### Development Tools
 
-Required tools: `gcc`, `dkms`, `linux-headers`. If not already installed, install with:
+Ensure your system is up to date and install the required build tools:
 
-```bash 
-sudo apt install -y linux-headers dkms git
+```bash
+sudo apt update
+sudo apt full-upgrade
+sudo apt install -y dkms git
 ```
 
 ### Fetching the Source Code
@@ -32,7 +34,7 @@ cd ar0234-v4l2-driver/
 
 To compile and install the kernel driver, execute the provided installation script:
 
-```bash 
+```bash
 sudo ./setup.sh
 ```
 
