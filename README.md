@@ -141,21 +141,6 @@ On Raspberry Pi devices, `libcamera` and `rpicam-apps` must be rebuilt together.
 sudo apt remove --purge rpicam-apps
 ```
 
-#### Install rpicam-apps Dependencies
-
-```bash
-sudo apt install -y libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev
-```
-
-```bash
-sudo apt install -y libavcodec-dev libavdevice-dev
-```
-
-```bash
-sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
-sudo apt install -y meson ninja-build
-```
-
 #### Install libcamera Dependencies
 
 ```bash
@@ -187,7 +172,13 @@ meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc
 
 #### Build and Install libcamera
 
-Finally, run the following command to build and install `libcamera`:
+Build `libcamera`:
+
+```bash
+ninja -C build
+```
+
+Then install it:
 
 ```bash
 sudo ninja -C build install
@@ -198,6 +189,14 @@ sudo ninja -C build install
 
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
+
+#### Install rpicam-apps Dependencies
+
+```bash
+sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
+sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
+sudo apt install -y libepoxy-dev libpng-dev
+```
 
 #### Clone the rpicam-apps Repository
 
