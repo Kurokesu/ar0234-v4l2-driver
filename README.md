@@ -12,12 +12,11 @@ This guide provides detailed instructions on how to install the AR0234 kernel dr
 
 ### Development Tools
 
-Ensure your system is up to date and install the required build tools:
+Required tools: `git`, `dkms`. If not already installed, install with:
 
 ```bash
-sudo apt update
-sudo apt full-upgrade
-sudo apt install -y dkms git
+sudo apt install -y git
+sudo apt install -y --no-install-recommends dkms
 ```
 
 ### Fetching the Source Code
