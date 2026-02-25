@@ -52,14 +52,24 @@ Edit the boot configuration file using the following command:
 sudo nano /boot/firmware/config.txt
 ```
 
-In the opened editor, locate the line containing `camera_auto_detect` and change its value to `0`. Then, add the line `dtoverlay=ar0234`. So, it will look like this:
+Make two changes:
 
-```
+1. Find `camera_auto_detect` near the top and set it to `0`:
+
+```ini
 camera_auto_detect=0
+```
+
+2. Add `dtoverlay=ar0234` under the `[all]` section at the bottom of the file:
+
+```ini
+[all]
 dtoverlay=ar0234
 ```
 
-After making these changes, save the file and exit the editor.
+Save the file and exit the editor.
+
+Remember to reboot your system for the changes to take effect after editing `config.txt`.
 
 Remember to reboot your system for the changes to take effect.
 
