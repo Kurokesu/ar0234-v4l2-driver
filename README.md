@@ -4,7 +4,12 @@
 ![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)
 ![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)
 
-This guide provides detailed instructions on how to install the AR0234 kernel driver on a Linux system, specifically Raspbian.
+Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/2.6" CMOS sensor.
+
+- 2-lane and 4-lane MIPI CSI-2 (up to 900 Mbps/lane)
+- 8-bit and 10-bit RAW output
+- 1920×1200 @ 120 fps (full resolution)
+- 960×600 @ 237 fps (2×2 binning)
 
 ## Prerequisites
 
@@ -104,8 +109,8 @@ dtoverlay=ar0234,link-frequency=360000000
 | **960×600 (2×2 binned)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 960 | 600 | 119 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 960 | 600 | 119 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 238 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 238 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 237 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 237 fps |
 | **HD 720p (sensor crop)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 1280 | 720 | 100 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 1280 | 720 | 100 fps |
