@@ -101,7 +101,7 @@ dtoverlay=ar0234,4lane
 ```
 
 > [!WARNING]
-> Before using `4lane`, confirm your selected camera port (cam0 or cam1) actually has 4 lanes wired on your Raspberry Pi and carrier board. Not all carrier boards provide 4-lane CSI on both ports.
+> Before using `4lane`, confirm your camera port actually supports 4 lanes. Not all Raspberry Pi models and carrier boards provide 4-lane CSI on both ports.
 
 ### link-frequency
 
