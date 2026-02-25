@@ -1,8 +1,15 @@
 # Kernel Driver for AR0234
 
 [![code formatting](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml)
+[![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
+[![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 
-This guide provides detailed instructions on how to install the AR0234 kernel driver on a Linux system, specifically Raspbian.
+Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/2.6" CMOS sensor.
+
+- 2-lane and 4-lane MIPI CSI-2 (up to 900 Mbps/lane)
+- 8-bit and 10-bit RAW output
+- 1920×1200 @ 120 fps (full resolution)
+- 960×600 @ 237 fps (2×2 binning)
 
 ## Prerequisites
 
@@ -10,12 +17,13 @@ This guide provides detailed instructions on how to install the AR0234 kernel dr
    
 ## Installation Steps
 
-### Development tools
+### Development Tools
 
-Required tools: `gcc`, `dkms`, `linux-headers`. If not already installed, install with:
+Required tools: `git`, `dkms`. If not already installed, install with:
 
-```bash 
-sudo apt install -y linux-headers dkms git
+```bash
+sudo apt install -y git
+sudo apt install -y --no-install-recommends dkms
 ```
 
 ### Fetching the Source Code
@@ -32,7 +40,7 @@ cd ar0234-v4l2-driver/
 
 To compile and install the kernel driver, execute the provided installation script:
 
-```bash 
+```bash
 sudo ./setup.sh
 ```
 
@@ -44,16 +52,27 @@ Edit the boot configuration file using the following command:
 sudo nano /boot/firmware/config.txt
 ```
 
-In the opened editor, locate the line containing `camera_auto_detect` and change its value to `0`. Then, add the line `dtoverlay=ar0234`. So, it will look like this:
+Make two changes:
 
-```
+1. Find `camera_auto_detect` near the top and set it to `0`:
+
+```ini
 camera_auto_detect=0
+```
+
+2. Add `dtoverlay=ar0234` under the `[all]` section at the bottom of the file:
+
+```ini
+[all]
 dtoverlay=ar0234
 ```
 
-After making these changes, save the file and exit the editor.
+Save the file and exit the editor.
 
-Remember to reboot your system for the changes to take effect.
+Remember to reboot your system for the changes to take effect after editing `config.txt`.
+
+> [!IMPORTANT]
+> The stock `libcamera` does not support the AR0234 sensor — you must build a patched version for the camera to function properly. See [libcamera](#libcamera) below.
 
 ## dtoverlay options
 
@@ -82,7 +101,7 @@ dtoverlay=ar0234,4lane
 ```
 
 > [!WARNING]
-> Before using `4lane`, confirm your selected camera port (cam0 or cam1) actually has 4 lanes wired on your Raspberry Pi and carrier board. Not all carrier boards provide 4-lane CSI on both ports.
+> Before using `4lane`, confirm your camera port actually supports 4 lanes. Not all Raspberry Pi models and carrier boards provide 4-lane CSI on both ports.
 
 ### link-frequency
 
@@ -101,8 +120,8 @@ dtoverlay=ar0234,link-frequency=360000000
 | **960×600 (2×2 binned)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 960 | 600 | 119 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 960 | 600 | 119 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 238 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 238 fps |
+| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 237 fps |
+| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 237 fps |
 | **HD 720p (sensor crop)** | | | | | | |
 | 360MHz | 720 Mbps | 2 | 8 | 1280 | 720 | 100 fps |
 | 450MHz | 900 Mbps | 2 | 10 | 1280 | 720 | 100 fps |
@@ -125,7 +144,7 @@ dtoverlay=ar0234,link-frequency=360000000
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
 
-## libcamera Support
+## libcamera
 
 Currently, the main `libcamera` repository does not support the `ar0234` sensor. To enable support, a fork has been created with the necessary modifications.
 
@@ -137,21 +156,6 @@ On Raspberry Pi devices, `libcamera` and `rpicam-apps` must be rebuilt together.
 
 ```bash
 sudo apt remove --purge rpicam-apps
-```
-
-#### Install rpicam-apps Dependencies
-
-```bash
-sudo apt install -y libepoxy-dev libjpeg-dev libtiff5-dev libpng-dev
-```
-
-```bash
-sudo apt install -y libavcodec-dev libavdevice-dev
-```
-
-```bash
-sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
-sudo apt install -y meson ninja-build
 ```
 
 #### Install libcamera Dependencies
@@ -167,7 +171,7 @@ sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 
 #### Clone the Forked libcamera Repository
 
-Download a local copy of Kurokesu's fork of `libcamera` with `ar0234` modifications from GitHub:
+Clone Kurokesu's fork of `libcamera` with `ar0234` modifications:
 
 ```bash
 cd ~
@@ -185,7 +189,13 @@ meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc
 
 #### Build and Install libcamera
 
-Finally, run the following command to build and install `libcamera`:
+Build `libcamera`:
+
+```bash
+ninja -C build
+```
+
+Then install it:
 
 ```bash
 sudo ninja -C build install
@@ -196,6 +206,14 @@ sudo ninja -C build install
 
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
+
+#### Install rpicam-apps Dependencies
+
+```bash
+sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
+sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
+sudo apt install -y libepoxy-dev libpng-dev
+```
 
 #### Clone the rpicam-apps Repository
 
@@ -266,9 +284,9 @@ rpicam-hello --version
 You should get output similar to this, with your build date:
 
 ```
-rpicam-apps build: v1.6.0 000000000000-invalid 08-05-2025 (16:08:14)
+rpicam-apps build: v1.11.1 8b7be4ebfe18 24-02-2026 (19:30:43)
 rpicam-apps capabilites: egl:1 qt:1 drm:1 libav:1
-libcamera build: v0.4.0
+libcamera build: v0.0.0+6157-91924454
 ```
 
 ### Verify that `ar0234` is detected
