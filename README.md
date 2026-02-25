@@ -1,8 +1,8 @@
 # Kernel Driver for AR0234
 
 [![code formatting](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml)
-![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)
-![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)
+[![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
+[![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 
 Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/2.6" CMOS sensor.
 
