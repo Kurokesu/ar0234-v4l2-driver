@@ -71,7 +71,8 @@ Save the file and exit the editor.
 
 Remember to reboot your system for the changes to take effect after editing `config.txt`.
 
-Remember to reboot your system for the changes to take effect.
+> [!IMPORTANT]
+> The stock `libcamera` does not support the AR0234 sensor — you must build a patched version for the camera to function properly. See [libcamera](#libcamera) below.
 
 ## dtoverlay options
 
@@ -143,7 +144,7 @@ dtoverlay=ar0234,link-frequency=360000000
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
 
-## libcamera Support
+## libcamera
 
 Currently, the main `libcamera` repository does not support the `ar0234` sensor. To enable support, a fork has been created with the necessary modifications.
 
