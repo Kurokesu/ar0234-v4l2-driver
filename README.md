@@ -171,7 +171,7 @@ sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 
 #### Clone the Forked libcamera Repository
 
-Download a local copy of Kurokesu's fork of `libcamera` with `ar0234` modifications from GitHub:
+Clone Kurokesu's fork of `libcamera` with `ar0234` modifications:
 
 ```bash
 cd ~
