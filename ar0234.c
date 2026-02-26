@@ -23,6 +23,10 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
+static int trigger_mode;
+module_param(trigger_mode, int, 0644);
+MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on");
+
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
 #define AR0234_REG_Y_ADDR_START CCI_REG16(0x3002)
