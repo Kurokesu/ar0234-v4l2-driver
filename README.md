@@ -17,9 +17,6 @@ Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/
    
 ## Installation Steps
 
-> [!IMPORTANT]
-> The default branch has been renamed from `master` to `main`. Existing clones need updating — see [Branch rename](#branch-rename).
-
 ### Development Tools
 
 Required tools: `git`, `dkms`. If not already installed, install with:
@@ -316,17 +313,6 @@ Available cameras
                              1280x720 [199.84 fps - (320, 240)/1280x720 crop]
                              1920x1080 [134.19 fps - (60, 0)/1920x1080 crop]
                              1920x1200 [120.95 fps - (0, 0)/1920x1200 crop]
-```
-
-## Branch rename
-
-The default branch has been renamed from `master` to `main`. If you have an existing local clone, run:
-
-```bash
-git fetch origin
-git branch -m master main
-git branch -u origin/main main
-git remote set-head origin -a
 ```
 
 ## Special Thanks
