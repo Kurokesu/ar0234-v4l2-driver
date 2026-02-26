@@ -86,8 +86,9 @@
 #define AR0234_FREQ_LINK_10BIT 450000000
 
 /* Frame timing */
-#define AR0234_FLL_MAX 0xFFFF
-#define AR0234_VBLANK_MIN 16
+#define AR0234_FLL_OVERHEAD 5
+#define AR0234_FLL_MAX (0xFFFF + AR0234_FLL_OVERHEAD)
+#define AR0234_VBLANK_MIN (16 + AR0234_FLL_OVERHEAD)
 #define AR0234_LINE_LENGTH_PCK_DEF 612
 
 /* Exposure control */
@@ -149,9 +150,10 @@
 #define AR0234_FMT_CODE_AMOUNT 1
 
 /* Helper macro for declaring ar0234 reg sequence */
-#define AR0234_REG_SEQ(_reg_array)                                      \
-	{                                                               \
-		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
+#define AR0234_REG_SEQ(_reg_array)                \
+	{                                         \
+		.regs = (_reg_array),             \
+		.amount = ARRAY_SIZE(_reg_array), \
 	}
 
 #define AR0234_SUPPLY_AMOUNT ARRAY_SIZE(ar0234_supply_names)
@@ -631,7 +633,9 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_VBLANK:
 		ret = cci_write(ar0234->regmap, AR0234_REG_FRAME_LENGTH_LINES,
-				ar0234->mode.format->height + ctrl->val, NULL);
+				ar0234->mode.format->height + ctrl->val -
+					AR0234_FLL_OVERHEAD,
+				NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN_RED:
 		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_DATA_RED,CCI_REG16(0x3072)	       AR0234_REG_VALUE_16BIT, ctrl->val);

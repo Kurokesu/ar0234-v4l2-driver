@@ -88,7 +88,7 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 
 If the camera is connected to the cam0 port, append `,cam0`:
 
-```
+```ini
 dtoverlay=ar0234,cam0
 ```
 
@@ -96,7 +96,7 @@ dtoverlay=ar0234,cam0
 
 To enable 4-lane MIPI CSI-2, append `,4lane`:
 
-```
+```ini
 dtoverlay=ar0234,4lane
 ```
 
@@ -109,7 +109,7 @@ This driver supports link frequencies of 450 MHz (default) and 360 MHz. Due to t
 
 To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 
-```
+```ini
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
@@ -140,7 +140,7 @@ dtoverlay=ar0234,link-frequency=360000000
 
 > [!TIP]
 > You can combine options. Example `cam0 + 4 lanes + 360 MHz`:
-> ```
+> ```ini
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
 
@@ -308,11 +308,11 @@ You should see output similar to this (depending on your link-frequency and lane
 ```
 Available cameras
 -----------------
-0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0234@10)
-    Modes: 'SGRBG10_CSI2P' : 960x600 [238.78 fps - (0, 0)/1920x1200 crop]
-                             1280x720 [199.84 fps - (320, 240)/1280x720 crop]
-                             1920x1080 [134.19 fps - (60, 0)/1920x1080 crop]
-                             1920x1200 [120.95 fps - (0, 0)/1920x1200 crop]
+0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@80000/ar0234@10)
+    Modes: 'SGRBG10_CSI2P' : 960x600 [236.85 fps - (0, 0)/1920x1200 crop]
+                             1280x720 [198.49 fps - (320, 240)/1280x720 crop]
+                             1920x1080 [133.58 fps - (60, 0)/1920x1080 crop]
+                             1920x1200 [120.45 fps - (0, 0)/1920x1200 crop]
 ```
 
 ## Special Thanks
