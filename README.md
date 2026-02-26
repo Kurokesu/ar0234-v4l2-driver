@@ -308,11 +308,11 @@ You should see output similar to this (depending on your link-frequency and lane
 ```
 Available cameras
 -----------------
-0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@88000/ar0234@10)
-    Modes: 'SGRBG10_CSI2P' : 960x600 [238.78 fps - (0, 0)/1920x1200 crop]
-                             1280x720 [199.84 fps - (320, 240)/1280x720 crop]
-                             1920x1080 [134.19 fps - (60, 0)/1920x1080 crop]
-                             1920x1200 [120.95 fps - (0, 0)/1920x1200 crop]
+0 : ar0234 [1920x1200 10-bit GRBG] (/base/axi/pcie@1000120000/rp1/i2c@80000/ar0234@10)
+    Modes: 'SGRBG10_CSI2P' : 960x600 [236.85 fps - (0, 0)/1920x1200 crop]
+                             1280x720 [198.49 fps - (320, 240)/1280x720 crop]
+                             1920x1080 [133.58 fps - (60, 0)/1920x1080 crop]
+                             1920x1200 [120.45 fps - (0, 0)/1920x1200 crop]
 ```
 
 ## Special Thanks
