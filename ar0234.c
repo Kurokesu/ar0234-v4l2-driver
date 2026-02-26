@@ -149,9 +149,10 @@
 #define AR0234_FMT_CODE_AMOUNT 1
 
 /* Helper macro for declaring ar0234 reg sequence */
-#define AR0234_REG_SEQ(_reg_array)                                      \
-	{                                                               \
-		.regs = (_reg_array), .amount = ARRAY_SIZE(_reg_array), \
+#define AR0234_REG_SEQ(_reg_array)                \
+	{                                         \
+		.regs = (_reg_array),             \
+		.amount = ARRAY_SIZE(_reg_array), \
 	}
 
 #define AR0234_SUPPLY_AMOUNT ARRAY_SIZE(ar0234_supply_names)
