@@ -88,7 +88,7 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 
 If the camera is connected to the cam0 port, append `,cam0`:
 
-```
+```ini
 dtoverlay=ar0234,cam0
 ```
 
@@ -96,7 +96,7 @@ dtoverlay=ar0234,cam0
 
 To enable 4-lane MIPI CSI-2, append `,4lane`:
 
-```
+```ini
 dtoverlay=ar0234,4lane
 ```
 
@@ -109,7 +109,7 @@ This driver supports link frequencies of 450 MHz (default) and 360 MHz. Due to t
 
 To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 
-```
+```ini
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
@@ -140,7 +140,7 @@ dtoverlay=ar0234,link-frequency=360000000
 
 > [!TIP]
 > You can combine options. Example `cam0 + 4 lanes + 360 MHz`:
-> ```
+> ```ini
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
 
