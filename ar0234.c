@@ -25,7 +25,7 @@
 
 static int trigger_mode;
 module_param(trigger_mode, int, 0644);
-MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on, 2=slave-sync");
+MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=external-trigger, 2=sync-sink");
 
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
@@ -140,6 +140,7 @@ MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on, 2=slave-sync");
 #define AR0234_TEST_PATTERN_WALKING_1S 256
 
 /* Trigger modes */
+#define AR0234_TRIGGER_MODE_OFF 0
 #define AR0234_TRIGGER_MODE_SLAVE_SYNC 2
 
 /* Native and active pixel array sizes */
@@ -997,7 +998,7 @@ static int ar0234_stream_on(struct ar0234 *ar0234)
 		     ar0234->hw_config.trigger_mode :
 		     trigger_mode;
 
-	if (tm == 0) {
+	if (tm == AR0234_TRIGGER_MODE_OFF) {
 		ret = ar0234_mode_select(ar0234, true);
 	} else {
 		u16 reset_val = AR0234_RESET_DEFAULT | AR0234_RESET_GPI_EN |
