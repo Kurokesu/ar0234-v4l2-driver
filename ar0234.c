@@ -25,7 +25,8 @@
 
 static int trigger_mode;
 module_param(trigger_mode, int, 0644);
-MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=external-trigger, 2=sync-sink");
+MODULE_PARM_DESC(trigger_mode,
+		 "Set trigger mode: 0=off, 1=external-trigger, 2=sync-sink");
 
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
@@ -1452,10 +1453,11 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
 	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
 
-	dev_info(ar0234->dev,
-		 "extclk: %luHz, link_frequency: %lluHz, lanes: %d\n",
-		 extclk_frequency, ep_cfg.link_frequencies[0],
-		 hw_config->num_data_lanes);
+	dev_info(
+		ar0234->dev,
+		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d\n",
+		extclk_frequency, ep_cfg.link_frequencies[0],
+		hw_config->num_data_lanes, hw_config->trigger_mode);
 
 	ret = 0;
 
