@@ -113,6 +113,20 @@
 		};
 	};
 
+	fragment@103 {
+		target = <&cam_node>;
+		__dormant__ {
+			trigger-mode = <1>;
+		};
+	};
+
+	fragment@104 {
+		target = <&cam_node>;
+		__dormant__ {
+			trigger-mode = <2>;
+		};
+	};
+
 	__overrides__ {
 		4lane = <0>, "-3+4-5+6";
 		rotation = <&cam_node>,"rotation:0";
@@ -124,6 +138,8 @@
 			   <&cam_node>, "clocks:0=",<&cam0_clk>,
 			   <&cam_node>, "vana-supply:0=",<&cam0_reg>;
 		link-frequency = <&cam_endpoint>,"link-frequencies#0";
+		external-trigger = <0>, "+103";
+		sync-sink = <0>, "+104";
 	};
 };
 
