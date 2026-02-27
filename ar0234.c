@@ -63,6 +63,7 @@ MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on");
 #define AR0234_REG_DIGITAL_TEST CCI_REG16(0x30B0)
 #define AR0234_REG_TEMPSENS_CTRL CCI_REG16(0x30B4)
 #define AR0234_REG_MFR_30BA CCI_REG16(0x30BA)
+#define AR0234_REG_GRR_CONTROL1 CCI_REG16(0x30CE)
 #define AR0234_REG_AE_LUMA_TARGET CCI_REG16(0x3102)
 #define AR0234_REG_DELTA_DK_CONTROL CCI_REG16(0x3180)
 #define AR0234_REG_DATA_FORMAT_BITS CCI_REG16(0x31AC)
@@ -94,6 +95,15 @@ MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on");
 #define AR0234_FLL_MAX (0xFFFF + AR0234_FLL_OVERHEAD)
 #define AR0234_VBLANK_MIN (16 + AR0234_FLL_OVERHEAD)
 #define AR0234_LINE_LENGTH_PCK_DEF 612
+
+/* AR0234_REG_RESET Bits */
+#define AR0234_RESET_DEFAULT 0x2058
+#define AR0234_RESET_STREAM BIT(2)
+#define AR0234_RESET_GPI_EN BIT(8)
+#define AR0234_RESET_FORCED_PLL_ON BIT(11)
+
+/* AR0234_REG_GRR_CONTROL1 Bits */
+#define AR0234_GRR_SLAVE_SH_SYNC BIT(8)
 
 /* Exposure control */
 #define AR0234_EXPOSURE_MIN 2
@@ -930,7 +940,8 @@ static int ar0234_soft_reset(struct ar0234 *ar0234)
 	/* 200ms */
 	usleep_range(200000, 201000);
 
-	return cci_write(ar0234->regmap, AR0234_REG_RESET, 0x2058, &ret);
+	return cci_write(ar0234->regmap, AR0234_REG_RESET, AR0234_RESET_DEFAULT,
+			 &ret);
 }
 
 static inline int
