@@ -25,7 +25,7 @@
 
 static int trigger_mode;
 module_param(trigger_mode, int, 0644);
-MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on");
+MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on, 2=slave-sync");
 
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
@@ -138,6 +138,9 @@ MODULE_PARM_DESC(trigger_mode, "Set trigger mode: 0=off, 1=on");
 #define AR0234_TEST_PATTERN_FADE_TO_GREY 3
 #define AR0234_TEST_PATTERN_PN9 4
 #define AR0234_TEST_PATTERN_WALKING_1S 256
+
+/* Trigger modes */
+#define AR0234_TRIGGER_MODE_SLAVE_SYNC 2
 
 /* Native and active pixel array sizes */
 #define AR0234_NATIVE_WIDTH 1940U
@@ -440,6 +443,7 @@ struct ar0234_hw_config {
 	struct gpio_desc *gpio_reset;
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
+	int trigger_mode;
 };
 
 struct ar0234 {
@@ -1324,7 +1328,8 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 	mutex_destroy(&ar0234->mutex);
 }
 
-static int ar0234_parse_hw_config(struct ar0234 *ar0234)
+static int ar0234_parse_hw_config(struct ar0234 *ar0234,
+				  struct i2c_client *client)
 {
 	struct v4l2_fwnode_endpoint ep_cfg = {
 		.bus_type = V4L2_MBUS_CSI2_DPHY,
@@ -1333,7 +1338,7 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 	struct ar0234_hw_config *hw_config = &ar0234->hw_config;
 	unsigned long extclk_frequency;
 	int ret = -EINVAL;
-	unsigned int i;
+	unsigned int i, tm;
 
 	for (i = 0; i < AR0234_SUPPLY_AMOUNT; i++)
 		hw_config->supplies[i].supply = ar0234_supply_names[i];
@@ -1415,6 +1420,9 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 	ar0234->pll_config = &ar0234_pll_configs[i];
 
+	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
+	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
+
 	dev_info(ar0234->dev,
 		 "extclk: %luHz, link_frequency: %lluHz, lanes: %d\n",
 		 extclk_frequency, ep_cfg.link_frequencies[0],
@@ -1442,7 +1450,7 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	ret = ar0234_parse_hw_config(ar0234);
+	ret = ar0234_parse_hw_config(ar0234, client);
 	if (ret)
 		return ret;
 
