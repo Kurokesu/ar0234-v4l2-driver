@@ -988,6 +988,33 @@ static inline int ar0234_mode_select(struct ar0234 *ar0234, bool stream_on)
 			 NULL);
 }
 
+static int ar0234_stream_on(struct ar0234 *ar0234)
+{
+	int ret = 0;
+	int tm;
+
+	tm = (ar0234->hw_config.trigger_mode >= 0) ?
+		     ar0234->hw_config.trigger_mode :
+		     trigger_mode;
+
+	if (tm == 0) {
+		ret = ar0234_mode_select(ar0234, true);
+	} else {
+		u16 reset_val = AR0234_RESET_DEFAULT | AR0234_RESET_GPI_EN |
+				AR0234_RESET_FORCED_PLL_ON;
+
+		if (tm == AR0234_TRIGGER_MODE_SLAVE_SYNC) {
+			reset_val |= AR0234_RESET_STREAM;
+			ret = cci_write(ar0234->regmap, AR0234_REG_GRR_CONTROL1,
+					AR0234_GRR_SLAVE_SH_SYNC, NULL);
+		}
+
+		cci_write(ar0234->regmap, AR0234_REG_RESET, reset_val, &ret);
+	}
+
+	return ret;
+}
+
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
@@ -1053,8 +1080,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	if (ret)
 		return ret;
 
-	/* set stream on register */
-	ret = ar0234_mode_select(ar0234, true);
+	ret = ar0234_stream_on(ar0234);
+
 	return ret;
 }
 
@@ -1063,10 +1090,11 @@ static void ar0234_stop_streaming(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	int ret;
 
-	/* set stream off */
-	ret = ar0234_mode_select(ar0234, false);
+	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, AR0234_RESET_DEFAULT,
+			NULL);
 	if (ret < 0)
-		dev_err(&client->dev, "%s failed to set stream\n", __func__);
+		dev_err(&client->dev, "%s failed to stop streaming\n",
+			__func__);
 
 	pm_runtime_mark_last_busy(&client->dev);
 	pm_runtime_put_autosuspend(&client->dev);
