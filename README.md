@@ -83,6 +83,9 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 | `cam0` | Use cam0 port instead of cam1 | cam1 |
 | `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 | `link-frequency=<Hz>` | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
+| `external-trigger` | Pulse/automatic trigger mode via TRIG pin | off |
+| `sync-sink` | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
+| `always-on` | Keep regulator powered (prevents runtime PM power-off) | off |
 
 ### cam0
 
@@ -113,7 +116,7 @@ To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
-### Sensor output formats
+#### Output formats
 
 | Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
 |---|---|---|---|---|---|---|
@@ -143,6 +146,44 @@ dtoverlay=ar0234,link-frequency=360000000
 > ```ini
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
+
+### Trigger modes
+
+The AR0234 supports two external trigger modes. Both use the `TRIG` pin on the camera module as the external signal input.
+
+#### external-trigger
+
+The sensor stays in standby and captures a single frame each time a pulse is received on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. If the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate (automatic mode). The framerate is otherwise determined by the trigger pulse frequency.
+
+```ini
+dtoverlay=ar0234,external-trigger
+```
+
+#### sync-sink
+
+In this mode the sensor streams continuously but locks its frame timing to the external `TRIG` signal. Unlike `external-trigger`, exposure and readout overlap (pipelined), so higher framerates are possible. The trigger period must not be shorter than the configured frame length.
+
+```ini
+dtoverlay=ar0234,sync-sink
+```
+
+Trigger modes can also be set at runtime via the module parameter without rebooting:
+
+```bash
+# 0=off, 1=external-trigger, 2=sync-sink
+echo 1 > /sys/module/ar0234/parameters/trigger_mode
+```
+
+> [!NOTE]
+> The device tree overlay setting takes precedence over the module parameter. If `external-trigger` or `sync-sink` is set in the overlay, the module parameter is ignored.
+
+### always-on
+
+The `always-on` option keeps the camera regulator permanently enabled, preventing the kernel from powering off the sensor during runtime power management suspend.
+
+```ini
+dtoverlay=ar0234,always-on
+```
 
 ## libcamera
 
