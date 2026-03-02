@@ -171,7 +171,7 @@ Trigger modes can also be set at runtime via the module parameter without reboot
 
 ```bash
 # 0=off, 1=external-trigger, 2=sync-sink
-echo 1 > /sys/module/ar0234/parameters/trigger_mode
+echo 1 | sudo tee /sys/module/ar0234/parameters/trigger_mode
 ```
 
 > [!NOTE]
