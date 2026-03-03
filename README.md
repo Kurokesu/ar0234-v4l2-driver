@@ -149,25 +149,43 @@ dtoverlay=ar0234,link-frequency=360000000
 
 ### Trigger modes
 
-The AR0234 supports two external trigger modes. Both use the `TRIG` pin on the camera module as the external signal input.
+AR0234 supports two external trigger modes. Both use `TRIG` pin on the camera module as the external signal input. The trigger pulse only initiates the capture — the exposure time remains controlled by the sensor's integration time register.
 
 #### external-trigger
 
-The sensor stays in standby and captures a single frame each time a pulse is received on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. If the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate (automatic mode). The framerate is otherwise determined by the trigger pulse frequency.
+The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. Two sub-modes are available:
+
+- **Pulsed** — each pulse on the `TRIG` pin captures a single frame (minimum pulse width ~1 µs). The framerate is determined by the pulse frequency.
+- **Automatic** — if the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate.
 
 ```ini
 dtoverlay=ar0234,external-trigger
 ```
 
+When using `rpicam-apps`, start the camera with a fixed shutter duration and gain:
+
+```bash
+rpicam-hello -t 0 --qt-preview --shutter 10000 --gain 2.0
+```
+
+> [!IMPORTANT]
+> The shutter value directly controls the exposure time and must satisfy:
+>
+> `shutter < (1 / trigger_fps) - frame_readout_time`
+>
+> Leaving either parameter on auto may cause AGC instability.
+
 #### sync-sink
 
-In this mode the sensor streams continuously but locks its frame timing to the external `TRIG` signal. Unlike `external-trigger`, exposure and readout overlap (pipelined), so higher framerates are possible. The trigger period must not be shorter than the configured frame length.
+The sensor streams continuously but locks its frame timing to the external `TRIG` signal. Unlike `external-trigger`, exposure and readout overlap (pipelined), so higher framerates are possible. The trigger period must not be shorter than the configured frame length.
 
 ```ini
 dtoverlay=ar0234,sync-sink
 ```
 
-Trigger modes can also be set at runtime via the module parameter without rebooting:
+---
+
+Trigger modes can also be set at runtime via the module parameter:
 
 ```bash
 # 0=off, 1=external-trigger, 2=sync-sink
@@ -175,7 +193,7 @@ echo 1 | sudo tee /sys/module/ar0234/parameters/trigger_mode
 ```
 
 > [!NOTE]
-> The device tree overlay setting takes precedence over the module parameter. If `external-trigger` or `sync-sink` is set in the overlay, the module parameter is ignored.
+> The module parameter is global — in a multi-camera setup it applies to all AR0234 sensors. To configure each sensor independently, use the device tree overlay options instead. The device tree setting takes precedence over the module parameter.
 
 ### always-on
 
