@@ -153,7 +153,7 @@ dtoverlay=ar0234,link-frequency=360000000
 
 ### Trigger modes
 
-AR0234 supports two external trigger modes. Both use `TRIG` pin on the camera module as the external signal input. The trigger pulse only initiates the capture — the exposure time remains controlled by the sensor's integration time register.
+AR0234 supports two external trigger modes. Both use the `TRIG` pin on the camera module as the external signal input. The `TRIG` pin is a **1.8V logic level** input wired directly to the sensor. The trigger pulse only initiates the capture — the exposure time remains controlled by the sensor's integration time register.
 
 #### external-trigger
 
