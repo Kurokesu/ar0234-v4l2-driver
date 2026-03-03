@@ -162,18 +162,20 @@ The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure a
 dtoverlay=ar0234,external-trigger
 ```
 
-When using `rpicam-apps`, start the camera with a fixed shutter duration and gain:
+When using `rpicam-apps` in pulsed mode, start the camera with a fixed shutter duration and gain:
 
 ```bash
 rpicam-hello -t 0 --qt-preview --shutter 10000 --gain 2.0
 ```
 
 > [!IMPORTANT]
-> Always specify a fixed shutter duration and gain, to ensure the AGC does not try to adjust them automatically. With external trigger the AGC tends to go unstable. In pulsed mode, the shutter value directly controls the sensor's exposure time and must satisfy:
->
-> `exposure_time < trigger_period - (1 / max_fps) - ~1.6 ms`
->
-> Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
+> Always specify a fixed shutter duration and gain, to ensure the AGC does not try to adjust them automatically. With external trigger the AGC tends to go unstable.
+
+The shutter value directly controls the sensor's exposure time and must satisfy:
+
+`exposure_time < trigger_period - (1 / max_fps) - ~1.6 ms`
+
+Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
 
 #### sync-sink
 
