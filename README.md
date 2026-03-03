@@ -169,11 +169,11 @@ rpicam-hello -t 0 --qt-preview --shutter 10000 --gain 2.0
 ```
 
 > [!IMPORTANT]
-> The shutter value directly controls the exposure time and must satisfy:
+> Always specify a fixed shutter duration and gain, to ensure the AGC does not try to adjust them automatically. With external trigger the AGC tends to go unstable. In pulsed mode, the shutter value directly controls the sensor's exposure time and must satisfy:
 >
-> `shutter < (1 / trigger_fps) - frame_readout_time`
+> `exposure_time < trigger_period - (1 / max_fps) - ~1.6 ms`
 >
-> Leaving either parameter on auto may cause AGC instability.
+> Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
 
 #### sync-sink
 
