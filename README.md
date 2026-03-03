@@ -159,7 +159,7 @@ AR0234 supports two external trigger modes. Both use `TRIG` pin on the camera mo
 
 The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. Two sub-modes are available:
 
-- **Pulsed** — each pulse on the `TRIG` pin captures a single frame (minimum pulse width ~1 µs). The framerate is determined by the pulse frequency.
+- **Pulsed** — each pulse on the `TRIG` pin captures a single frame (minimum pulse width at least 125 ns — 3 EXTCLK cycles at 24 MHz). The framerate is determined by the pulse frequency.
 - **Automatic** — if the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate.
 
 ```ini
