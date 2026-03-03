@@ -10,6 +10,7 @@ Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/
 - 8-bit and 10-bit RAW output
 - 1920×1200 @ 120 fps (full resolution)
 - 960×600 @ 237 fps (2×2 binning)
+- External trigger modes (pulsed, automatic, sync-sink)
 
 ## Prerequisites
 
@@ -186,11 +187,9 @@ Maximum trigger frequency for pulsed mode:
 
 | Resolution | Lanes | Max trigger frequency |
 |---|---|---|
-| **1920×1200 (full resolution)** | | |
-| | 2 | 30 Hz |
+| **1920×1200 (full resolution)** | 2 | 30 Hz |
 | | 4 | 60 Hz |
-| **960×600 (2×2 binned)** | | |
-| | 2 | 60 Hz |
+| **960×600 (2×2 binned)** | 2 | 60 Hz |
 | | 4 | 120 Hz |
 
 #### sync-sink
