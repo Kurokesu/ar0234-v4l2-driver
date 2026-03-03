@@ -141,6 +141,9 @@ dtoverlay=ar0234,link-frequency=360000000
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
 | 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
+> [!NOTE]
+> These framerates do not apply to pulsed trigger mode — see [external-trigger](#external-trigger).
+
 > [!TIP]
 > You can combine options. Example `cam0 + 4 lanes + 360 MHz`:
 > ```ini
@@ -162,7 +165,9 @@ The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure a
 dtoverlay=ar0234,external-trigger
 ```
 
-When using `rpicam-apps` in pulsed mode, start the camera with a fixed shutter duration and gain:
+---
+
+When using `rpicam-apps` with sensor driven in **pulsed** trigger mode, start the camera with a fixed shutter duration and gain:
 
 ```bash
 rpicam-hello -t 0 --qt-preview --shutter 10000 --gain 2.0
@@ -175,7 +180,18 @@ The shutter value directly controls the sensor's exposure time and must satisfy:
 
 `exposure_time < trigger_period - (1 / max_fps) - ~1.6 ms`
 
-Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
+Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30 Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
+
+Maximum trigger frequency for pulsed mode:
+
+| Resolution | Lanes | Max trigger frequency |
+|---|---|---|
+| **1920×1200 (full resolution)** | | |
+| | 2 | 30 Hz |
+| | 4 | 60 Hz |
+| **960×600 (2×2 binned)** | | |
+| | 2 | 60 Hz |
+| | 4 | 120 Hz |
 
 #### sync-sink
 
