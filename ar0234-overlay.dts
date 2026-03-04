@@ -149,6 +149,8 @@
 		always-on = <0>, "+7";
 		external-trigger = <0>, "+103";
 		sync-sink = <0>, "+104";
+		flash = <&cam_node>,"flash?";
+		flash-delay = <&cam_node>,"flash-delay:0";
 	};
 };
 
