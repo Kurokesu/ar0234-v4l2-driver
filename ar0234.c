@@ -23,6 +23,11 @@
 #include <media/v4l2-fwnode.h>
 #include <media/v4l2-subdev.h>
 
+static int trigger_mode;
+module_param(trigger_mode, int, 0644);
+MODULE_PARM_DESC(trigger_mode,
+		 "Set trigger mode: 0=off, 1=external-trigger, 2=sync-sink");
+
 /* Registers */
 #define AR0234_REG_CHIP_ID CCI_REG16(0x3000)
 #define AR0234_REG_Y_ADDR_START CCI_REG16(0x3002)
@@ -59,6 +64,7 @@
 #define AR0234_REG_DIGITAL_TEST CCI_REG16(0x30B0)
 #define AR0234_REG_TEMPSENS_CTRL CCI_REG16(0x30B4)
 #define AR0234_REG_MFR_30BA CCI_REG16(0x30BA)
+#define AR0234_REG_GRR_CONTROL1 CCI_REG16(0x30CE)
 #define AR0234_REG_AE_LUMA_TARGET CCI_REG16(0x3102)
 #define AR0234_REG_DELTA_DK_CONTROL CCI_REG16(0x3180)
 #define AR0234_REG_DATA_FORMAT_BITS CCI_REG16(0x31AC)
@@ -90,6 +96,15 @@
 #define AR0234_FLL_MAX (0xFFFF + AR0234_FLL_OVERHEAD)
 #define AR0234_VBLANK_MIN (16 + AR0234_FLL_OVERHEAD)
 #define AR0234_LINE_LENGTH_PCK_DEF 612
+
+/* AR0234_REG_RESET Bits */
+#define AR0234_RESET_DEFAULT 0x2058
+#define AR0234_RESET_STREAM BIT(2)
+#define AR0234_RESET_GPI_EN BIT(8)
+#define AR0234_RESET_FORCED_PLL_ON BIT(11)
+
+/* AR0234_REG_GRR_CONTROL1 Bits */
+#define AR0234_GRR_SLAVE_SH_SYNC BIT(8)
 
 /* Exposure control */
 #define AR0234_EXPOSURE_MIN 2
@@ -124,6 +139,10 @@
 #define AR0234_TEST_PATTERN_FADE_TO_GREY 3
 #define AR0234_TEST_PATTERN_PN9 4
 #define AR0234_TEST_PATTERN_WALKING_1S 256
+
+/* Trigger modes */
+#define AR0234_TRIGGER_MODE_OFF 0
+#define AR0234_TRIGGER_MODE_SLAVE_SYNC 2
 
 /* Native and active pixel array sizes */
 #define AR0234_NATIVE_WIDTH 1940U
@@ -426,6 +445,7 @@ struct ar0234_hw_config {
 	struct gpio_desc *gpio_reset;
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
+	int trigger_mode;
 };
 
 struct ar0234 {
@@ -926,7 +946,8 @@ static int ar0234_soft_reset(struct ar0234 *ar0234)
 	/* 200ms */
 	usleep_range(200000, 201000);
 
-	return cci_write(ar0234->regmap, AR0234_REG_RESET, 0x2058, &ret);
+	return cci_write(ar0234->regmap, AR0234_REG_RESET, AR0234_RESET_DEFAULT,
+			 &ret);
 }
 
 static inline int
@@ -967,6 +988,33 @@ static inline int ar0234_mode_select(struct ar0234 *ar0234, bool stream_on)
 {
 	return cci_write(ar0234->regmap, AR0234_REG_MODE_SELECT, stream_on,
 			 NULL);
+}
+
+static int ar0234_stream_on(struct ar0234 *ar0234)
+{
+	int ret = 0;
+	int tm;
+
+	tm = (ar0234->hw_config.trigger_mode >= 0) ?
+		     ar0234->hw_config.trigger_mode :
+		     trigger_mode;
+
+	if (tm == AR0234_TRIGGER_MODE_OFF) {
+		ret = ar0234_mode_select(ar0234, true);
+	} else {
+		u16 reset_val = AR0234_RESET_DEFAULT | AR0234_RESET_GPI_EN |
+				AR0234_RESET_FORCED_PLL_ON;
+
+		if (tm == AR0234_TRIGGER_MODE_SLAVE_SYNC) {
+			reset_val |= AR0234_RESET_STREAM;
+			ret = cci_write(ar0234->regmap, AR0234_REG_GRR_CONTROL1,
+					AR0234_GRR_SLAVE_SH_SYNC, NULL);
+		}
+
+		cci_write(ar0234->regmap, AR0234_REG_RESET, reset_val, &ret);
+	}
+
+	return ret;
 }
 
 static int ar0234_start_streaming(struct ar0234 *ar0234)
@@ -1034,8 +1082,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	if (ret)
 		return ret;
 
-	/* set stream on register */
-	ret = ar0234_mode_select(ar0234, true);
+	ret = ar0234_stream_on(ar0234);
+
 	return ret;
 }
 
@@ -1044,10 +1092,11 @@ static void ar0234_stop_streaming(struct ar0234 *ar0234)
 	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
 	int ret;
 
-	/* set stream off */
-	ret = ar0234_mode_select(ar0234, false);
+	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, AR0234_RESET_DEFAULT,
+			NULL);
 	if (ret < 0)
-		dev_err(&client->dev, "%s failed to set stream\n", __func__);
+		dev_err(&client->dev, "%s failed to stop streaming\n",
+			__func__);
 
 	pm_runtime_mark_last_busy(&client->dev);
 	pm_runtime_put_autosuspend(&client->dev);
@@ -1309,7 +1358,8 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 	mutex_destroy(&ar0234->mutex);
 }
 
-static int ar0234_parse_hw_config(struct ar0234 *ar0234)
+static int ar0234_parse_hw_config(struct ar0234 *ar0234,
+				  struct i2c_client *client)
 {
 	struct v4l2_fwnode_endpoint ep_cfg = {
 		.bus_type = V4L2_MBUS_CSI2_DPHY,
@@ -1318,7 +1368,7 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 	struct ar0234_hw_config *hw_config = &ar0234->hw_config;
 	unsigned long extclk_frequency;
 	int ret = -EINVAL;
-	unsigned int i;
+	unsigned int i, tm;
 
 	for (i = 0; i < AR0234_SUPPLY_AMOUNT; i++)
 		hw_config->supplies[i].supply = ar0234_supply_names[i];
@@ -1400,10 +1450,14 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 
 	ar0234->pll_config = &ar0234_pll_configs[i];
 
-	dev_info(ar0234->dev,
-		 "extclk: %luHz, link_frequency: %lluHz, lanes: %d\n",
-		 extclk_frequency, ep_cfg.link_frequencies[0],
-		 hw_config->num_data_lanes);
+	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
+	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
+
+	dev_info(
+		ar0234->dev,
+		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d\n",
+		extclk_frequency, ep_cfg.link_frequencies[0],
+		hw_config->num_data_lanes, hw_config->trigger_mode);
 
 	ret = 0;
 
@@ -1427,7 +1481,7 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	ret = ar0234_parse_hw_config(ar0234);
+	ret = ar0234_parse_hw_config(ar0234, client);
 	if (ret)
 		return ret;
 

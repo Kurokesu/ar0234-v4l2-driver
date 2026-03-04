@@ -56,6 +56,13 @@
 		};
 	};
 
+	reg_alwayson_frag: fragment@7 {
+		target = <&cam1_reg>;
+		__dormant__ {
+			regulator-always-on;
+		};
+	};
+
 	i2c_frag: fragment@100 {
 		target = <&i2c_csi_dsi>;
 		__overlay__ {
@@ -113,6 +120,20 @@
 		};
 	};
 
+	fragment@103 {
+		target = <&cam_node>;
+		__dormant__ {
+			trigger-mode = <1>;
+		};
+	};
+
+	fragment@104 {
+		target = <&cam_node>;
+		__dormant__ {
+			trigger-mode = <2>;
+		};
+	};
+
 	__overrides__ {
 		4lane = <0>, "-3+4-5+6";
 		rotation = <&cam_node>,"rotation:0";
@@ -121,9 +142,13 @@
 		cam0 = <&i2c_frag>, "target:0=",<&i2c_csi_dsi0>,
 			   <&csi_frag>, "target:0=",<&csi0>,
 			   <&clk_frag>, "target:0=",<&cam0_clk>,
+			   <&reg_alwayson_frag>, "target:0=",<&cam0_reg>,
 			   <&cam_node>, "clocks:0=",<&cam0_clk>,
 			   <&cam_node>, "vana-supply:0=",<&cam0_reg>;
 		link-frequency = <&cam_endpoint>,"link-frequencies#0";
+		always-on = <0>, "+7";
+		external-trigger = <0>, "+103";
+		sync-sink = <0>, "+104";
 	};
 };
 

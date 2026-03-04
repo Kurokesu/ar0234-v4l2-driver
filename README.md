@@ -10,6 +10,7 @@ Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/
 - 8-bit and 10-bit RAW output
 - 1920×1200 @ 120 fps (full resolution)
 - 960×600 @ 237 fps (2×2 binning)
+- External trigger modes (pulsed, automatic, sync-sink)
 
 ## Prerequisites
 
@@ -83,6 +84,9 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 | `cam0` | Use cam0 port instead of cam1 | cam1 |
 | `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 | `link-frequency=<Hz>` | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
+| `external-trigger` | Pulse/automatic trigger mode via TRIG pin | off |
+| `sync-sink` | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
+| `always-on` | Keep regulator powered (prevents runtime PM power-off) | off |
 
 ### cam0
 
@@ -113,7 +117,7 @@ To set the link frequency to 360 MHz, append `,link-frequency=360000000`:
 dtoverlay=ar0234,link-frequency=360000000
 ```
 
-### Sensor output formats
+#### Output formats
 
 | Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
 |---|---|---|---|---|---|---|
@@ -138,11 +142,83 @@ dtoverlay=ar0234,link-frequency=360000000
 | 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
 | 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
+> [!NOTE]
+> These framerates do not apply to pulsed trigger mode — see [external-trigger](#external-trigger).
+
 > [!TIP]
 > You can combine options. Example `cam0 + 4 lanes + 360 MHz`:
 > ```ini
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
+
+### Trigger modes
+
+AR0234 supports two external trigger modes. Both use `TRIG` pin on the camera module as the external signal input. `TRIG` pin is a **1.8V logic level** input wired directly to the sensor. The trigger pulse only initiates the capture — the exposure time remains controlled by the sensor's integration time register.
+
+#### external-trigger
+
+The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. Two sub-modes are available:
+
+- **Pulsed** — each pulse on the `TRIG` pin captures a single frame (minimum pulse width at least 125 ns — 3 EXTCLK cycles at 24 MHz). The framerate is determined by the pulse frequency.
+- **Automatic** — if the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate.
+
+```ini
+dtoverlay=ar0234,external-trigger
+```
+
+---
+
+When using `rpicam-apps` with sensor driven in **pulsed** trigger mode, start the camera with a fixed shutter duration and gain:
+
+```bash
+rpicam-hello -t 0 --qt-preview --shutter 10000 --gain 2.0
+```
+
+> [!IMPORTANT]
+> Always specify a fixed shutter duration and gain, to ensure the AGC does not try to adjust them automatically. With external trigger the AGC tends to go unstable.
+
+The shutter value directly controls the sensor's exposure time and must satisfy:
+
+`exposure_time < trigger_period - (1 / max_fps) - ~1.6 ms`
+
+Where `max_fps` is the maximum framerate for your mode from the [output formats](#output-formats) table, and ~1.6 ms accounts for MIPI wakeup and internal sensor overhead. For example, at full resolution 4-lane 10-bit (max 120 fps) triggered at 30 Hz: `1/30 - 1/120 - 1.6 ms ≈ 23.7 ms` maximum exposure time.
+
+Maximum trigger frequency for pulsed mode:
+
+| Resolution | Lanes | Max trigger frequency |
+|---|---|---|
+| **1920×1200 (full resolution)** | 2 | 30 Hz |
+| | 4 | 60 Hz |
+| **960×600 (2×2 binned)** | 2 | 60 Hz |
+| | 4 | 120 Hz |
+
+#### sync-sink
+
+The sensor streams continuously but locks its frame timing to the external `TRIG` signal. Unlike `external-trigger`, exposure and readout overlap (pipelined), so higher framerates are possible. The trigger period must not be shorter than the configured frame length.
+
+```ini
+dtoverlay=ar0234,sync-sink
+```
+
+---
+
+Trigger modes can also be set at runtime via the module parameter:
+
+```bash
+# 0=off, 1=external-trigger, 2=sync-sink
+echo 1 | sudo tee /sys/module/ar0234/parameters/trigger_mode
+```
+
+> [!NOTE]
+> The module parameter is global — in a multi-camera setup it applies to all AR0234 sensors. To configure each sensor independently, use the device tree overlay options instead. The device tree setting takes precedence over the module parameter.
+
+### always-on
+
+The `always-on` option keeps the camera regulator permanently enabled, preventing the kernel from powering off the sensor during runtime power management suspend.
+
+```ini
+dtoverlay=ar0234,always-on
+```
 
 ## libcamera
 
@@ -234,21 +310,26 @@ meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabl
 ```
 
 > [!IMPORTANT]
-> `-Denable_libav` enables optional video encode/decode support (FFmpeg / `libavcodec`).
-> 
-> - **Debian Bookworm**: the packaged `libav*` version is **too old** to build `rpicam-apps` releases **newer than v1.9.0** with libav enabled.
->   - On Bookworm this typically shows up as build errors like “libavcodec API version is too old”, because Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60** (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
->   - If you want libav support on Bookworm, check out the `rpicam-apps` **v1.9.0** before running `meson setup`:
-> 
->     ```bash
->     git checkout v1.9.0
->     ```
->   - If you are building **`rpicam-apps` > v1.9.0** on Bookworm, you must disable libav:
->
->     ```bash
->     meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
->     ```
-> - **Debian Trixie**: build `rpicam-apps` as usual with `-Denable_libav=enabled` (no need to check out an older version).
+> On Raspberry Pi OS **Bookworm**, the packaged `libav*` is **too old** for `rpicam-apps` newer than v1.9.0.
+
+<details>
+<summary>Bookworm libav workaround</summary>
+
+Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60**, causing build errors like “libavcodec API version is too old” (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
+
+If you want libav support on Bookworm, check out `rpicam-apps` **v1.9.0** before running `meson setup`:
+
+```bash
+git checkout v1.9.0
+```
+
+If you are building **`rpicam-apps` > v1.9.0** on Bookworm, you must disable libav:
+
+```bash
+meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
+```
+
+</details>
 
 #### Build rpicam-apps
 
