@@ -1460,11 +1460,26 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
 	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
 
+	hw_config->flash_enable =
+		of_property_read_bool(client->dev.of_node, "flash");
+
+	if (hw_config->flash_enable) {
+		s32 delay = 0;
+
+		of_property_read_s32(client->dev.of_node, "flash-delay",
+				     &delay);
+		hw_config->flash_delay = (s8)delay;
+	}
+
 	dev_info(
 		ar0234->dev,
-		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d\n",
+		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d, flash: %s%s\n",
 		extclk_frequency, ep_cfg.link_frequencies[0],
-		hw_config->num_data_lanes, hw_config->trigger_mode);
+		hw_config->num_data_lanes, hw_config->trigger_mode,
+		hw_config->flash_enable ? "enabled" : "disabled",
+		(hw_config->flash_enable && hw_config->flash_delay) ?
+			((hw_config->flash_delay > 0) ? " (lead)" : " (lag)") :
+			"");
 
 	ret = 0;
 
