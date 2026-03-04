@@ -78,6 +78,7 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_REG_MIPI_TIMING_4 CCI_REG16(0x31BC)
 #define AR0234_REG_COMPANDING CCI_REG16(0x31D0)
 #define AR0234_REG_PIX_DEF_ID CCI_REG16(0x31E0)
+#define AR0234_REG_LED_FLASH_CONTROL CCI_REG16(0x3270)
 #define AR0234_REG_MIPI_CNTRL CCI_REG16(0x3354)
 
 /* Chip ID */
@@ -105,6 +106,10 @@ MODULE_PARM_DESC(trigger_mode,
 
 /* AR0234_REG_GRR_CONTROL1 Bits */
 #define AR0234_GRR_SLAVE_SH_SYNC BIT(8)
+
+/* AR0234_REG_LED_FLASH_CONTROL Bits */
+#define AR0234_FLASH_ENABLE BIT(8)
+#define AR0234_FLASH_LEAD BIT(7)
 
 /* Exposure control */
 #define AR0234_EXPOSURE_MIN 2
@@ -446,6 +451,8 @@ struct ar0234_hw_config {
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
 	int trigger_mode;
+	bool flash_enable;
+	s8 flash_delay;
 };
 
 struct ar0234 {
