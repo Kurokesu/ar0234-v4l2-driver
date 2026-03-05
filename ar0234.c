@@ -1084,6 +1084,25 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 	}
 
+	/* Configure flash output if enabled */
+	if (ar0234->hw_config.flash_enable) {
+		u16 flash_val = AR0234_FLASH_ENABLE;
+		s8 delay = ar0234->hw_config.flash_delay;
+
+		if (delay > 0)
+			flash_val |= (delay & 0x7F) | AR0234_FLASH_LEAD;
+		else if (delay < 0)
+			flash_val |= (-delay) & 0x7F;
+
+		ret = cci_write(ar0234->regmap, AR0234_REG_LED_FLASH_CONTROL,
+				flash_val, NULL);
+		if (ret < 0) {
+			dev_err(&client->dev, "%s failed to configure flash\n",
+				__func__);
+			return ret;
+		}
+	}
+
 	/* Apply customized values from user */
 	ret = __v4l2_ctrl_handler_setup(ar0234->sd.ctrl_handler);
 	if (ret)
