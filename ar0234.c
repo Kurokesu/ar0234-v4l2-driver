@@ -109,7 +109,6 @@ MODULE_PARM_DESC(trigger_mode,
 
 /* AR0234_REG_LED_FLASH_CONTROL Bits */
 #define AR0234_FLASH_ENABLE BIT(8)
-#define AR0234_FLASH_LEAD BIT(7)
 
 /* Exposure control */
 #define AR0234_EXPOSURE_MIN 2
@@ -1086,13 +1085,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 
 	/* Configure flash output if enabled */
 	if (ar0234->hw_config.flash_enable) {
-		u16 flash_val = AR0234_FLASH_ENABLE;
-		s8 delay = ar0234->hw_config.flash_delay;
-
-		if (delay > 0)
-			flash_val |= (delay & 0x7F) | AR0234_FLASH_LEAD;
-		else if (delay < 0)
-			flash_val |= (-delay) & 0x7F;
+		u16 flash_val = AR0234_FLASH_ENABLE |
+				(u8)ar0234->hw_config.flash_delay;
 
 		ret = cci_write(ar0234->regmap, AR0234_REG_LED_FLASH_CONTROL,
 				flash_val, NULL);
@@ -1497,7 +1491,7 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 		hw_config->num_data_lanes, hw_config->trigger_mode,
 		hw_config->flash_enable ? "enabled" : "disabled",
 		(hw_config->flash_enable && hw_config->flash_delay) ?
-			((hw_config->flash_delay > 0) ? " (lead)" : " (lag)") :
+			((hw_config->flash_delay < 0) ? " (lead)" : " (lag)") :
 			"");
 
 	ret = 0;
