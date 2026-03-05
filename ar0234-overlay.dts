@@ -150,7 +150,8 @@
 		external-trigger = <0>, "+103";
 		sync-sink = <0>, "+104";
 		flash = <&cam_node>,"flash?";
-		flash-delay = <&cam_node>,"flash-delay:0";
+		flash-lead = <&cam_node>,"flash-lead:0";
+		flash-lag = <&cam_node>,"flash-lag:0";
 	};
 };
 
