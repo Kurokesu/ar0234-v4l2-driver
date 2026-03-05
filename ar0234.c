@@ -1477,11 +1477,15 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 		of_property_read_bool(client->dev.of_node, "flash");
 
 	if (hw_config->flash_enable) {
-		s32 delay = 0;
+		u32 lead = 0, lag = 0;
 
-		of_property_read_s32(client->dev.of_node, "flash-delay",
-				     &delay);
-		hw_config->flash_delay = (s8)delay;
+		of_property_read_u32(client->dev.of_node, "flash-lead", &lead);
+		of_property_read_u32(client->dev.of_node, "flash-lag", &lag);
+
+		if (lead)
+			hw_config->flash_delay = -(s8)lead;
+		else if (lag)
+			hw_config->flash_delay = (s8)lag;
 	}
 
 	dev_info(
