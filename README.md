@@ -11,6 +11,7 @@ Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/
 - 1920×1200 @ 120 fps (full resolution)
 - 960×600 @ 237 fps (2×2 binning)
 - External trigger modes (pulsed, automatic, sync-sink)
+- Flash output with programmable lead/lag delay
 
 ## Prerequisites
 
@@ -87,6 +88,9 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 | `external-trigger` | Pulse/automatic trigger mode via TRIG pin | off |
 | `sync-sink` | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
 | `always-on` | Keep regulator powered (prevents runtime PM power-off) | off |
+| `flash` | Enable FLASH output pin (HIGH during exposure) | off |
+| `flash-lead=<n>` | Flash lead delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
+| `flash-lag=<n>` | Flash lag delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
 
 ### cam0
 
@@ -159,7 +163,7 @@ AR0234 supports two external trigger modes. Both use `TRIG` pin on the camera mo
 
 The sensor stays in standby and waits for activity on the `TRIG` pin. Exposure and readout happen sequentially — the sensor does not begin readout until exposure is complete. Two sub-modes are available:
 
-- **Pulsed** — each pulse on the `TRIG` pin captures a single frame (minimum pulse width at least 125 ns — 3 EXTCLK cycles at 24 MHz). The framerate is determined by the pulse frequency.
+- **Pulsed** — each high pulse on the `TRIG` pin captures a single frame (minimum pulse width at least 125 ns — 3 EXTCLK cycles at 24 MHz). The framerate is determined by the pulse frequency.
 - **Automatic** — if the `TRIG` signal stays high, the sensor outputs frames continuously at the configured framerate.
 
 ```ini
@@ -219,6 +223,36 @@ The `always-on` option keeps the camera regulator permanently enabled, preventin
 ```ini
 dtoverlay=ar0234,always-on
 ```
+
+### Flash output
+
+AR0234 has a `FLASH` output pin that goes HIGH during sensor exposure. This can be used to synchronize external illumination such as strobes or LEDs. The pin operates at 1.8V logic level.
+
+To enable the flash output:
+
+```ini
+dtoverlay=ar0234,flash
+```
+
+By default, flash pulse closely follows the exposure period (longer by ~8 µs on 4-lane or ~16 µs on 2-lane due to sensor overhead). The flash signal start can be shifted relative to exposure using `flash-lead` or `flash-lag`:
+
+- **`flash-lead`** — flash starts *before* exposure, extending total flash time
+- **`flash-lag`** — flash starts *after* exposure begins, shortening total flash time
+
+Both accept values in the range 0 to 127, where each unit is approximately **3.4 µs** (4-lane) or **6.8 µs** (2-lane).
+
+```ini
+# Flash starts ~34 µs before exposure (4-lane)
+dtoverlay=ar0234,4lane,flash,flash-lead=10
+
+# Flash starts ~34 µs after exposure begins (4-lane)
+dtoverlay=ar0234,4lane,flash,flash-lag=10
+```
+
+For most use cases, small delay values (single digits) are sufficient. Large delay values combined with short exposure times are not recommended. For short exposures (below ~450 µs on 4-lane or ~900 µs on 2-lane), `flash-lead` should not be used.
+
+> [!NOTE]
+> In trigger mode, flash output is suppressed when the trigger pulse is shorter than ~1.5 ms.
 
 ## libcamera
 

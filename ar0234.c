@@ -78,6 +78,7 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_REG_MIPI_TIMING_4 CCI_REG16(0x31BC)
 #define AR0234_REG_COMPANDING CCI_REG16(0x31D0)
 #define AR0234_REG_PIX_DEF_ID CCI_REG16(0x31E0)
+#define AR0234_REG_LED_FLASH_CONTROL CCI_REG16(0x3270)
 #define AR0234_REG_MIPI_CNTRL CCI_REG16(0x3354)
 
 /* Chip ID */
@@ -105,6 +106,9 @@ MODULE_PARM_DESC(trigger_mode,
 
 /* AR0234_REG_GRR_CONTROL1 Bits */
 #define AR0234_GRR_SLAVE_SH_SYNC BIT(8)
+
+/* AR0234_REG_LED_FLASH_CONTROL Bits */
+#define AR0234_FLASH_ENABLE BIT(8)
 
 /* Exposure control */
 #define AR0234_EXPOSURE_MIN 2
@@ -446,6 +450,8 @@ struct ar0234_hw_config {
 	unsigned int num_data_lanes;
 	enum ar0234_lane_mode_id lane_mode;
 	int trigger_mode;
+	bool flash_enable;
+	s8 flash_delay;
 };
 
 struct ar0234 {
@@ -1077,6 +1083,20 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 	}
 
+	/* Configure flash output if enabled */
+	if (ar0234->hw_config.flash_enable) {
+		u16 flash_val = AR0234_FLASH_ENABLE |
+				(u8)ar0234->hw_config.flash_delay;
+
+		ret = cci_write(ar0234->regmap, AR0234_REG_LED_FLASH_CONTROL,
+				flash_val, NULL);
+		if (ret < 0) {
+			dev_err(&client->dev, "%s failed to configure flash\n",
+				__func__);
+			return ret;
+		}
+	}
+
 	/* Apply customized values from user */
 	ret = __v4l2_ctrl_handler_setup(ar0234->sd.ctrl_handler);
 	if (ret)
@@ -1453,11 +1473,30 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
 	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
 
+	hw_config->flash_enable =
+		of_property_read_bool(client->dev.of_node, "flash");
+
+	if (hw_config->flash_enable) {
+		u32 lead = 0, lag = 0;
+
+		of_property_read_u32(client->dev.of_node, "flash-lead", &lead);
+		of_property_read_u32(client->dev.of_node, "flash-lag", &lag);
+
+		if (lead)
+			hw_config->flash_delay = -(s8)lead;
+		else if (lag)
+			hw_config->flash_delay = (s8)lag;
+	}
+
 	dev_info(
 		ar0234->dev,
-		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d\n",
+		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d, flash: %s%s\n",
 		extclk_frequency, ep_cfg.link_frequencies[0],
-		hw_config->num_data_lanes, hw_config->trigger_mode);
+		hw_config->num_data_lanes, hw_config->trigger_mode,
+		hw_config->flash_enable ? "enabled" : "disabled",
+		(hw_config->flash_enable && hw_config->flash_delay) ?
+			((hw_config->flash_delay < 0) ? " (lead)" : " (lag)") :
+			"");
 
 	ret = 0;
 
