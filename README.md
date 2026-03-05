@@ -89,7 +89,8 @@ The `ar0234` overlay supports comma-separated options to override defaults:
 | `sync-sink` | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
 | `always-on` | Keep regulator powered (prevents runtime PM power-off) | off |
 | `flash` | Enable FLASH output pin (HIGH during exposure) | off |
-| `flash-delay=<n>` | Flash lead/lag delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane): negative = lead, positive = lag | 0 |
+| `flash-lead=<n>` | Flash lead delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
+| `flash-lag=<n>` | Flash lag delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
 
 ### cam0
 
@@ -233,22 +234,22 @@ To enable the flash output:
 dtoverlay=ar0234,flash
 ```
 
-By default, flash pulse closely follows the exposure period (longer by ~8 µs on 4-lane or ~16 µs on 2-lane due to sensor overhead). The `flash-delay` option shifts flash signal start relative to exposure:
+By default, flash pulse closely follows the exposure period (longer by ~8 µs on 4-lane or ~16 µs on 2-lane due to sensor overhead). The flash signal start can be shifted relative to exposure using `flash-lead` or `flash-lag`:
 
-- **Negative** value — flash starts *before* exposure (lead)
-- **Positive** value — flash starts *after* exposure begins (lag)
+- **`flash-lead`** — flash starts *before* exposure, extending total flash time
+- **`flash-lag`** — flash starts *after* exposure begins, shortening total flash time
 
-The delay value is a signed 8-bit integer (**-128 to +127**), where each unit is approximately **3.4 µs** (4-lane) or **6.8 µs** (2-lane).
+Both accept values in the range 0 to 127, where each unit is approximately **3.4 µs** (4-lane) or **6.8 µs** (2-lane).
 
 ```ini
 # Flash starts ~34 µs before exposure (4-lane)
-dtoverlay=ar0234,4lane,flash,flash-delay=-10
+dtoverlay=ar0234,4lane,flash,flash-lead=10
 
 # Flash starts ~34 µs after exposure begins (4-lane)
-dtoverlay=ar0234,4lane,flash,flash-delay=10
+dtoverlay=ar0234,4lane,flash,flash-lag=10
 ```
 
-Keep the delay small relative to your shutter time. For short exposures (below ~450 µs on 4-lane or ~900 µs on 2-lane), lead (negative) values should not be used and max lag (positive) value is `2 × (shutter_µs / row_µs) - 5`, where row time is ~6.8 µs (4-lane) or ~13.6 µs (2-lane).
+For most use cases, small delay values (single digits) are sufficient. Large delay values combined with short exposure times are not recommended. For short exposures (below ~450 µs on 4-lane or ~900 µs on 2-lane), `flash-lead` should not be used.
 
 > [!NOTE]
 > In trigger mode, flash output is suppressed when the trigger pulse is shorter than ~1.5 ms.
