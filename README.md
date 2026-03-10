@@ -4,7 +4,7 @@
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 
-Raspberry Pi kernel driver for the Onsemi AR0234CS — a 2.3MP global shutter 1/2.6" CMOS sensor.
+Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6" CMOS sensor.
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 900 Mbps/lane)
 - 8-bit and 10-bit RAW output
@@ -126,25 +126,25 @@ dtoverlay=ar0234,link-frequency=360000000
 | Link frequency | Data rate / lane | Lanes | Bit depth | Width | Height | Max FPS |
 |---|---|---|---|---|---|---|
 | **960×600 (2×2 binned)** | | | | | | |
-| 360MHz | 720 Mbps | 2 | 8 | 960 | 600 | 119 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 960 | 600 | 119 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 960 | 600 | 237 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 960 | 600 | 237 fps |
+| 360 MHz | 720 Mbps | 2 | 8 | 960 | 600 | 119 fps |
+| 450 MHz | 900 Mbps | 2 | 10 | 960 | 600 | 119 fps |
+| 360 MHz | 720 Mbps | 4 | 8 | 960 | 600 | 237 fps |
+| 450 MHz | 900 Mbps | 4 | 10 | 960 | 600 | 237 fps |
 | **HD 720p (sensor crop)** | | | | | | |
-| 360MHz | 720 Mbps | 2 | 8 | 1280 | 720 | 100 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 1280 | 720 | 100 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 1280 | 720 | 200 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 1280 | 720 | 200 fps |
+| 360 MHz | 720 Mbps | 2 | 8 | 1280 | 720 | 100 fps |
+| 450 MHz | 900 Mbps | 2 | 10 | 1280 | 720 | 100 fps |
+| 360 MHz | 720 Mbps | 4 | 8 | 1280 | 720 | 200 fps |
+| 450 MHz | 900 Mbps | 4 | 10 | 1280 | 720 | 200 fps |
 | **Full HD 1080p (sensor crop)** | | | | | | |
-| 360MHz | 720 Mbps | 2 | 8 | 1920 | 1080 | 67 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 1920 | 1080 | 67 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 1920 | 1080 | 134 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 1920 | 1080 | 134 fps |
+| 360 MHz | 720 Mbps | 2 | 8 | 1920 | 1080 | 67 fps |
+| 450 MHz | 900 Mbps | 2 | 10 | 1920 | 1080 | 67 fps |
+| 360 MHz | 720 Mbps | 4 | 8 | 1920 | 1080 | 134 fps |
+| 450 MHz | 900 Mbps | 4 | 10 | 1920 | 1080 | 134 fps |
 | **1920×1200 (full resolution)** | | | | | | |
-| 360MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
-| 450MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
-| 360MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
-| 450MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
+| 360 MHz | 720 Mbps | 2 | 8 | 1920 | 1200 | 60 fps |
+| 450 MHz | 900 Mbps | 2 | 10 | 1920 | 1200 | 60 fps |
+| 360 MHz | 720 Mbps | 4 | 8 | 1920 | 1200 | 120 fps |
+| 450 MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
 > [!NOTE]
 > These framerates do not apply to pulsed trigger mode — see [external-trigger](#external-trigger).
