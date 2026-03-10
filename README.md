@@ -302,10 +302,10 @@ sudo ninja -C build install
 ```
 
 > [!TIP]
-> On devices with 1GB of memory or less, build may exceed available memory. Append `-j 1` to limit to a single process.
+> On devices with 1 GB of memory or less, build may exceed available memory. Append `-j 1` to limit to a single process.
 
 > [!WARNING]
-> `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
+> `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after building `libcamera`.
 
 #### Install rpicam-apps dependencies
 
@@ -368,9 +368,9 @@ Install:
 sudo meson install -C build
 ```
 
-> [!TIP]  
+> [!TIP]
 > This should automatically update `ldconfig` cache. If you have trouble accessing your new build, update manually:
-> 
+>
 > ```bash
 > sudo ldconfig
 > ```
@@ -420,5 +420,5 @@ Available cameras
 ## Special thanks
 
 - [6by9](https://github.com/6by9) for sharing modded [ar0234 driver](https://github.com/6by9/linux/tree/rpi-6.12.y-ar0234) and [libcamera](https://github.com/6by9/libcamera/tree/ar0234) code.
-- [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver) repository which was used as the basis for structuring this driver.
-- Sasha Shturma's Raspberry Pi CM4 carrier with Hi-Res MIPI Display project. The install script is adapted from [cm4-panel-jdi-lt070me05000](https://github.com/renetec-io/cm4-panel-jdi-lt070me05000).
+- [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver), used as basis for structuring this driver.
+- Sasha Shturma's Raspberry Pi CM4 carrier with Hi-Res MIPI Display project. Install script adapted from [cm4-panel-jdi-lt070me05000](https://github.com/renetec-io/cm4-panel-jdi-lt070me05000).
