@@ -1,4 +1,4 @@
-# Kernel Driver for AR0234
+# Kernel driver for AR0234
 
 [![code formatting](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/clang-format.yml)
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
@@ -17,9 +17,9 @@ Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6
 
 **Kernel version**: You should be running on a Linux kernel version 6.1 or newer. You can verify your kernel version by executing `uname -r` in your terminal.
    
-## Installation Steps
+## Installation steps
 
-### Development Tools
+### Development tools
 
 Required tools: `git`, `dkms`. If not already installed, install with:
 
@@ -28,7 +28,7 @@ sudo apt install -y git
 sudo apt install -y --no-install-recommends dkms
 ```
 
-### Fetching the Source Code
+### Fetching the source code
 
 Clone the repository to your local machine and navigate to the cloned directory:
 
@@ -38,7 +38,7 @@ git clone https://github.com/Kurokesu/ar0234-v4l2-driver.git
 cd ar0234-v4l2-driver/
 ```
 
-### Compiling and Installing the Kernel Driver
+### Compiling and installing
 
 To compile and install the kernel driver, execute the provided installation script:
 
@@ -46,7 +46,7 @@ To compile and install the kernel driver, execute the provided installation scri
 sudo ./setup.sh
 ```
 
-### Updating the Boot Configuration
+### Boot configuration
 
 Edit the boot configuration file using the following command:
 
@@ -262,13 +262,13 @@ On Raspberry Pi devices, `libcamera` and `rpicam-apps` must be rebuilt together.
 
 ### Build libcamera and rpicam-apps
 
-#### Remove Pre-installed rpicam-apps
+#### Remove pre-installed rpicam-apps
 
 ```bash
 sudo apt remove --purge rpicam-apps
 ```
 
-#### Install libcamera Dependencies
+#### Install libcamera dependencies
 
 ```bash
 sudo apt install -y libboost-dev
@@ -279,7 +279,7 @@ sudo apt install -y python3-yaml python3-ply
 sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
-#### Clone the Forked libcamera Repository
+#### Clone libcamera fork
 
 Clone Kurokesu's fork of `libcamera` with `ar0234` modifications:
 
@@ -289,7 +289,7 @@ git clone https://github.com/Kurokesu/libcamera.git --branch ar0234
 cd libcamera/
 ```
 
-#### Configure the Build Environment
+#### Configure build environment
 
 Run `meson` to configure the build environment:
 
@@ -297,7 +297,7 @@ Run `meson` to configure the build environment:
 meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
 
-#### Build and Install libcamera
+#### Build and install libcamera
 
 Build `libcamera`:
 
@@ -317,7 +317,7 @@ sudo ninja -C build install
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after you build `libcamera`.
 
-#### Install rpicam-apps Dependencies
+#### Install rpicam-apps dependencies
 
 ```bash
 sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
@@ -325,7 +325,7 @@ sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample
 sudo apt install -y libepoxy-dev libpng-dev
 ```
 
-#### Clone the rpicam-apps Repository
+#### Clone rpicam-apps
 
 Clone Raspberry Pi's `rpicam-apps` GitHub repository:
 
@@ -335,7 +335,7 @@ git clone https://github.com/raspberrypi/rpicam-apps.git
 cd rpicam-apps
 ```
 
-#### Configure the rpicam-apps Build
+#### Configure rpicam-apps build
 
 Run the following `meson` command to configure the build (libav enabled by default):
 
@@ -385,7 +385,7 @@ sudo meson install -C build
 > sudo ldconfig
 > ```
 
-#### Verify the rpicam-apps Build
+#### Verify rpicam-apps build
 
 Verify that `rpicam-apps` was rebuilt correctly by checking the version:
 
@@ -427,7 +427,7 @@ Available cameras
                              1920x1200 [120.45 fps - (0, 0)/1920x1200 crop]
 ```
 
-## Special Thanks
+## Special thanks
 
 - [6by9](https://github.com/6by9) for sharing modded [ar0234 driver](https://github.com/6by9/linux/tree/rpi-6.12.y-ar0234) and [libcamera](https://github.com/6by9/libcamera/tree/ar0234) code.
 - [Will Whang](https://github.com/will127534) for [imx585-v4l2-driver](https://github.com/will127534/imx585-v4l2-driver) repository which was used as the basis for structuring this driver.
