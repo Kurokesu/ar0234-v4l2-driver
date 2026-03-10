@@ -13,11 +13,10 @@ Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6
 - External trigger modes (pulsed, automatic, sync-sink)
 - Flash output with programmable lead/lag delay
 
-## Prerequisites
+## Installation
 
-**Kernel version**: Linux kernel 6.1 or newer. Verify with `uname -r`.
-   
-## Installation steps
+> [!NOTE]
+> Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
 
 ### Development tools
 
@@ -28,21 +27,14 @@ sudo apt install -y git
 sudo apt install -y --no-install-recommends dkms
 ```
 
-### Fetching the source code
+### Build and install
 
-Clone this repository:
+Clone this repository and run the setup script:
 
 ```bash
 cd ~
 git clone https://github.com/Kurokesu/ar0234-v4l2-driver.git
 cd ar0234-v4l2-driver/
-```
-
-### Compiling and installing
-
-Compile and install by running the setup script:
-
-```bash
 sudo ./setup.sh
 ```
 
