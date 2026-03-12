@@ -63,7 +63,7 @@ dtoverlay=ar0234
 Save and exit. Reboot for changes to take effect.
 
 > [!IMPORTANT]
-> Stock `libcamera` does not support AR0234 — you must build a patched version for camera to function. See [libcamera](#libcamera) below.
+> Stock `libcamera` does not support AR0234 — you must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
 
 ## dtoverlay options
 
