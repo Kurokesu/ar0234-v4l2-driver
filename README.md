@@ -243,21 +243,21 @@ For most use cases, small delay values (single digits) are sufficient. Large del
 > [!NOTE]
 > In trigger mode, flash output is suppressed when the trigger pulse is shorter than ~1.5 ms.
 
-## libcamera
+## Build libcamera
 
 Main `libcamera` repository does not support AR0234. A fork with necessary modifications is available.
 
-On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version:
+On Raspberry Pi, `libcamera` and `rpicam-apps` must be rebuilt together. Detailed instructions are available [here](https://www.raspberrypi.com/documentation/computers/camera_software.html#advanced-rpicam-apps), but for convenience, here is a shorter version.
 
-### Build libcamera and rpicam-apps
-
-#### Remove pre-installed rpicam-apps
+Remove pre-installed `rpicam-apps`:
 
 ```bash
 sudo apt remove --purge rpicam-apps
 ```
 
-#### Install libcamera dependencies
+### libcamera
+
+Install dependencies:
 
 ```bash
 sudo apt install -y libboost-dev
@@ -268,8 +268,6 @@ sudo apt install -y python3-yaml python3-ply
 sudo apt install -y libglib2.0-dev libgstreamer-plugins-base1.0-dev
 ```
 
-#### Clone libcamera fork
-
 Clone Kurokesu's `libcamera` fork with AR0234 support:
 
 ```bash
@@ -278,15 +276,11 @@ git clone https://github.com/Kurokesu/libcamera.git --branch ar0234
 cd libcamera/
 ```
 
-#### Configure build environment
-
 Configure with `meson`:
 
 ```bash
 meson setup build --buildtype=release -Dpipelines=rpi/vc4,rpi/pisp -Dipas=rpi/vc4,rpi/pisp -Dv4l2=enabled -Dgstreamer=enabled -Dtest=false -Dlc-compliance=disabled -Dcam=disabled -Dqcam=disabled -Ddocumentation=disabled -Dpycamera=enabled
 ```
-
-#### Build and install libcamera
 
 Build:
 
@@ -306,15 +300,15 @@ sudo ninja -C build install
 > [!WARNING]
 > `libcamera` does not yet have a stable binary interface. Always build `rpicam-apps` after building `libcamera`.
 
-#### Install rpicam-apps dependencies
+### rpicam-apps
+
+Install dependencies:
 
 ```bash
 sudo apt install -y cmake libboost-program-options-dev libdrm-dev libexif-dev
 sudo apt install -y libavcodec-dev libavdevice-dev libavformat-dev libswresample-dev
 sudo apt install -y libepoxy-dev libpng-dev
 ```
-
-#### Clone rpicam-apps
 
 Clone Raspberry Pi's `rpicam-apps` repository:
 
@@ -323,8 +317,6 @@ cd ~
 git clone https://github.com/raspberrypi/rpicam-apps.git
 cd rpicam-apps
 ```
-
-#### Configure rpicam-apps build
 
 Configure with `meson` (libav enabled by default):
 
@@ -351,15 +343,11 @@ Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavco
 
 </details>
 
-#### Build rpicam-apps
-
 Build:
 
 ```bash
 meson compile -C build
 ```
-
-#### Install rpicam-apps
 
 Install:
 
@@ -374,7 +362,7 @@ sudo meson install -C build
 > sudo ldconfig
 > ```
 
-#### Verify rpicam-apps build
+### Verify rpicam-apps build
 
 Verify `rpicam-apps` was rebuilt correctly:
 
