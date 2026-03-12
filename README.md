@@ -71,15 +71,15 @@ Save and exit. Reboot for changes to take effect.
 
 | option | description | default |
 |--------|-------------|----------|
-| `cam0` | Use cam0 port instead of cam1 | cam1 |
-| `4lane` | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
-| `link-frequency=<Hz>` | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
-| `external-trigger` | Pulse/automatic trigger mode via TRIG pin | off |
-| `sync-sink` | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
-| `always-on` | Keep regulator powered (prevents runtime PM power-off) | off |
-| `flash` | Enable FLASH output pin (HIGH during exposure) | off |
-| `flash-lead=<n>` | Flash lead delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
-| `flash-lag=<n>` | Flash lag delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
+| [`cam0`](#cam0) | Use cam0 port instead of cam1 | cam1 |
+| [`4lane`](#4lane) | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
+| [`link-frequency=<Hz>`](#link-frequency) | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
+| [`external-trigger`](#external-trigger) | Pulse/automatic trigger mode via TRIG pin | off |
+| [`sync-sink`](#sync-sink) | Multi-sensor sync mode (frame timing locked to TRIG pin) | off |
+| [`always-on`](#always-on) | Keep regulator powered (prevents runtime PM power-off) | off |
+| [`flash`](#flash-output) | Enable FLASH output pin (HIGH during exposure) | off |
+| [`flash-lead=<n>`](#flash-output) | Flash lead delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
+| [`flash-lag=<n>`](#flash-output) | Flash lag delay (~3.4 µs/unit 4-lane, ~6.8 µs/unit 2-lane) | 0 |
 
 ### cam0
 
