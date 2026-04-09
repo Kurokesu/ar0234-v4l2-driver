@@ -1,12 +1,35 @@
-obj-m += ar0234.o
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (c) 2026, UAB Kurokesu. All rights reserved.
+#
+# Makefile for AR0234 camera driver on Raspberry Pi (device tree overlay + kernel module)
 
-KDIR ?= /lib/modules/$(shell uname -r)/build
+SRC_DIR   := $(shell pwd)
+BUILD_DIR := $(SRC_DIR)/build
 
-all:
-	make -C $(KDIR)  M=$(shell pwd)
+DTS       := ar0234-overlay.dts
+DTBO      := ar0234.dtbo
+DTC       := dtc
+DTC_FLAGS := -Wno-interrupts_property -Wno-unit_address_vs_reg -@ -I dts -O dtb
+
+KDIR      ?= /lib/modules/$(shell uname -r)/build
+
+.PHONY: all dtbo module clean
+
+all: $(BUILD_DIR)/$(DTBO) $(BUILD_DIR)/ar0234.ko
+
+dtbo: $(BUILD_DIR)/$(DTBO)
+module: $(BUILD_DIR)/ar0234.ko
+
+$(BUILD_DIR)/$(DTBO): $(DTS) | $(BUILD_DIR)
+	$(DTC) $(DTC_FLAGS) -o $@ $<
+
+$(BUILD_DIR)/ar0234.ko: ar0234.c | $(BUILD_DIR)
+	@echo "obj-m += ar0234.o" > $(BUILD_DIR)/Kbuild
+	@ln -sf $(SRC_DIR)/ar0234.c $(BUILD_DIR)/ar0234.c
+	$(MAKE) -C $(KDIR) M=$(BUILD_DIR) modules
+
+$(BUILD_DIR):
+	@mkdir -p $(BUILD_DIR)
 
 clean:
-	make -C $(KDIR)  M=$(shell pwd) clean
-
-%.dtbo: %.dts
-	dtc -@ -I dts -O dtb -o $@ $<
+	rm -rf $(BUILD_DIR)
