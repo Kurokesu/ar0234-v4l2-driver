@@ -1,0 +1,72 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os_label: [bookworm, trixie]
+        kernel_defconfig: [bcm2711_defconfig, bcm2712_defconfig]
+        include:
+          - os_label: bookworm
+            kernel_branch: rpi-6.6.y
+          - os_label: trixie
+            kernel_branch: rpi-6.12.y
+
+    name: "Build (${{ matrix.os_label }} / ${{ matrix.kernel_defconfig }})"
+    container:
+      image: debian:${{ matrix.os_label }}
+
+    env:
+      KERNEL_BRANCH: ${{ matrix.kernel_branch }}
+      KERNEL_DEFCONFIG: ${{ matrix.kernel_defconfig }}
+
+    steps:
+      - name: Checkout driver source
+        uses: actions/checkout@v6
+
+      - name: Checkout RPi kernel source
+        uses: actions/checkout@v6
+        with:
+          repository: raspberrypi/linux
+          ref: ${{ matrix.kernel_branch }}
+          path: rpi-linux
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            crossbuild-essential-arm64 \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            device-tree-compiler \
+            kmod
+
+      - name: Prepare kernel headers
+        run: |
+          cd rpi-linux
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- "${KERNEL_DEFCONFIG}"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
+
+      - name: Build driver
+        run: |
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+            KDIR=${{ github.workspace }}/rpi-linux
+
+      - name: Verify build artifacts
+        run: |
+          file build/ar0234.ko
+          modinfo build/ar0234.ko
+          file build/ar0234.dtbo
