@@ -63,7 +63,7 @@ jobs:
       - name: Build driver
         run: |
           make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
-            KDIR=${{ github.workspace }}/rpi-linux
+            KDIR=$PWD/rpi-linux
 
       - name: Verify build artifacts
         run: |
