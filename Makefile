@@ -4,7 +4,7 @@
 # Makefile for AR0234 camera driver on Raspberry Pi (device tree overlay + kernel module)
 
 SRC_DIR   := $(shell pwd)
-BUILD_DIR := $(SRC_DIR)/build
+BUILD_DIR := build
 
 DTS       := ar0234-overlay.dts
 DTBO      := ar0234.dtbo
@@ -23,10 +23,15 @@ module: $(BUILD_DIR)/ar0234.ko
 $(BUILD_DIR)/$(DTBO): $(DTS) | $(BUILD_DIR)
 	$(DTC) $(DTC_FLAGS) -o $@ $<
 
-$(BUILD_DIR)/ar0234.ko: ar0234.c | $(BUILD_DIR)
-	@echo "obj-m += ar0234.o" > $(BUILD_DIR)/Kbuild
+$(BUILD_DIR)/Kbuild: | $(BUILD_DIR)
+	@echo "obj-m += ar0234.o" > $@
 	@ln -sf $(SRC_DIR)/ar0234.c $(BUILD_DIR)/ar0234.c
-	$(MAKE) -C $(KDIR) M=$(BUILD_DIR) modules
+
+$(BUILD_DIR)/ar0234.o: ar0234.c $(BUILD_DIR)/Kbuild
+	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) ar0234.o
+
+$(BUILD_DIR)/ar0234.ko: ar0234.c $(BUILD_DIR)/Kbuild
+	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) modules
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)

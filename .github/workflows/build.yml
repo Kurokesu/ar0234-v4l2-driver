@@ -51,8 +51,7 @@ jobs:
             flex \
             libssl-dev \
             libelf-dev \
-            device-tree-compiler \
-            kmod
+            device-tree-compiler
 
       - name: Prepare kernel headers
         run: |
@@ -62,11 +61,10 @@ jobs:
 
       - name: Build driver
         run: |
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+          make build/ar0234.o dtbo ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
             KDIR=$PWD/rpi-linux
 
       - name: Verify build artifacts
         run: |
-          file build/ar0234.ko
-          modinfo build/ar0234.ko
+          file build/ar0234.o
           file build/ar0234.dtbo
