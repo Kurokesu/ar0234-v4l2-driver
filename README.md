@@ -1,8 +1,10 @@
 # Kernel driver for AR0234
 
+[![Build](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/build-rpi.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/build-rpi.yml)
 [![Code format](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/code-format.yml/badge.svg)](https://github.com/Kurokesu/ar0234-v4l2-driver/actions/workflows/code-format.yml)
 [![Raspberry Pi OS Bookworm](https://img.shields.io/badge/Raspberry_Pi_OS-Bookworm-blue?logo=raspberrypi)](https://www.debian.org/releases/bookworm/)
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
+[![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-brightgreen?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
 
 Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6" CMOS sensor.
 
@@ -14,9 +16,6 @@ Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6
 - Flash output with programmable lead/lag delay
 
 ## Setup
-
-> [!NOTE]
-> Requires Linux kernel 6.1 or newer. Verify with `uname -r`.
 
 Install required tools:
 
