@@ -37,7 +37,6 @@ sudo cp "$SCRIPT_DIR/dkms.postinst" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR/Makefile" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR/ar0234.c" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR/ar0234-overlay.dts" "$DKMS_SRC/"
-sudo chmod +x "$DKMS_SRC/dkms.postinst"
 
 echo "DKMS: adding ${PACKAGE_NAME}/${VERSION}"
 sudo dkms add -m "$PACKAGE_NAME" -v "$VERSION"
