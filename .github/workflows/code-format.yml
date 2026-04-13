@@ -1,4 +1,4 @@
-name: code formatting
+name: Code format
 
 permissions:
   contents: read
@@ -8,15 +8,15 @@ on:
     branches:
       - main
     paths:
-      - '.github/workflows/clang-format.yml'
+      - '.github/workflows/code-format.yml'
       - '.clang-format'
       - '**/*.c'
   pull_request:
     types: [opened, synchronize, reopened]
 
 jobs:
-  code-formatting:
-    name: code formatting
+  clang-format:
+    name: clang-format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
