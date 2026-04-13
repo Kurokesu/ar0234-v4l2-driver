@@ -15,17 +15,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        kernel_branch: [rpi-6.12.y]
+        kernel_branch: [rpi-6.12.y, latest]
         kernel_defconfig: [bcm2711_defconfig, bcm2712_defconfig]
         include:
+          - kernel_defconfig: bcm2711_defconfig
+            platform: bcm2711
+          - kernel_defconfig: bcm2712_defconfig
+            platform: bcm2712
           - kernel_branch: latest
-            kernel_defconfig: bcm2711_defconfig
-            allow_failure: true
-          - kernel_branch: latest
-            kernel_defconfig: bcm2712_defconfig
             allow_failure: true
 
-    name: "${{ matrix.kernel_branch }} · ${{ matrix.kernel_defconfig }}"
+    name: "${{ matrix.kernel_branch }} / ${{ matrix.platform }}"
     continue-on-error: ${{ matrix.allow_failure || false }}
     container:
       image: debian:latest
