@@ -1,4 +1,7 @@
-name: Build
+name: Build (RPi)
+
+permissions:
+  contents: read
 
 on:
   push:
@@ -12,20 +15,22 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os_label: [bookworm, trixie]
+        kernel_branch: [rpi-6.12.y]
         kernel_defconfig: [bcm2711_defconfig, bcm2712_defconfig]
         include:
-          - os_label: bookworm
-            kernel_branch: rpi-6.6.y
-          - os_label: trixie
-            kernel_branch: rpi-6.12.y
+          - kernel_branch: latest
+            kernel_defconfig: bcm2711_defconfig
+            allow_failure: true
+          - kernel_branch: latest
+            kernel_defconfig: bcm2712_defconfig
+            allow_failure: true
 
-    name: "Build (${{ matrix.os_label }} / ${{ matrix.kernel_defconfig }})"
+    name: "${{ matrix.kernel_branch }} · ${{ matrix.kernel_defconfig }}"
+    continue-on-error: ${{ matrix.allow_failure || false }}
     container:
-      image: debian:${{ matrix.os_label }}
+      image: debian:latest
 
     env:
-      KERNEL_BRANCH: ${{ matrix.kernel_branch }}
       KERNEL_DEFCONFIG: ${{ matrix.kernel_defconfig }}
 
     steps:
@@ -36,7 +41,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           repository: raspberrypi/linux
-          ref: ${{ matrix.kernel_branch }}
+          ref: ${{ matrix.kernel_branch != 'latest' && matrix.kernel_branch || '' }}
           path: rpi-linux
           fetch-depth: 1
 
