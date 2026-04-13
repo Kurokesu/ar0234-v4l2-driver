@@ -10,6 +10,12 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 PACKAGE_NAME=$(grep '^PACKAGE_NAME=' "$SCRIPT_DIR/dkms.conf" | cut -d'=' -f2)
 VERSION=$(grep '^PACKAGE_VERSION=' "$SCRIPT_DIR/dkms.conf" | cut -d'=' -f2)
+
+if [ -z "$PACKAGE_NAME" ] || [ -z "$VERSION" ]; then
+    echo "Error: Failed to read PACKAGE_NAME or PACKAGE_VERSION from dkms.conf"
+    exit 1
+fi
+
 DKMS_SRC="/usr/src/${PACKAGE_NAME}-${VERSION}"
 
 if ! command -v dkms &>/dev/null; then
