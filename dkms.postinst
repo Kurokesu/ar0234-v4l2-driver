@@ -2,4 +2,4 @@
 
 cd "$(dirname "$0")"
 make dtbo
-install -m 644 build/ar0234.dtbo /boot/overlays/
+install -m 644 build/*.dtbo /boot/overlays/
