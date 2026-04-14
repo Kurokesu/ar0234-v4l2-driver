@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2026, UAB Kurokesu. All rights reserved.
 #
-# Install AR0234 camera driver (device tree overlay + kernel module via DKMS)
+# Install camera driver (device tree overlay + kernel module via DKMS)
 
 set -e
 
@@ -35,8 +35,8 @@ sudo mkdir -p "$DKMS_SRC"
 sudo cp "$SCRIPT_DIR/dkms.conf" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR/dkms.postinst" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR/Makefile" "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR/ar0234.c" "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR/ar0234-overlay.dts" "$DKMS_SRC/"
+sudo cp "$SCRIPT_DIR"/*.c "$DKMS_SRC/"
+sudo cp "$SCRIPT_DIR"/*.dts "$DKMS_SRC/"
 
 echo "DKMS: adding ${PACKAGE_NAME}/${VERSION}"
 sudo dkms add -m "$PACKAGE_NAME" -v "$VERSION"
