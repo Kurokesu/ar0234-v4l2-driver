@@ -1,0 +1,70 @@
+name: Build
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # "latest" resolves to an empty ref, which checks out the default
+        # branch of raspberrypi/linux (whatever the newest kernel is).
+        kernel_branch: [rpi-6.12.y, latest]
+        kernel_defconfig: [bcm2711_defconfig, bcm2712_defconfig]
+        include:
+          - kernel_defconfig: bcm2711_defconfig
+            platform: bcm2711
+          - kernel_defconfig: bcm2712_defconfig
+            platform: bcm2712
+          - kernel_branch: latest
+            allow_failure: true
+
+    name: "${{ matrix.kernel_branch }} / ${{ matrix.platform }}"
+    continue-on-error: ${{ matrix.allow_failure || false }}
+
+    env:
+      KERNEL_DEFCONFIG: ${{ matrix.kernel_defconfig }}
+
+    steps:
+      - name: Checkout driver source
+        uses: actions/checkout@v6
+
+      - name: Checkout RPi kernel source
+        uses: actions/checkout@v6
+        with:
+          repository: raspberrypi/linux
+          ref: ${{ matrix.kernel_branch != 'latest' && matrix.kernel_branch || '' }}
+          path: rpi-linux
+          fetch-depth: 1
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            crossbuild-essential-arm64 \
+            bc \
+            bison \
+            flex \
+            libssl-dev \
+            libelf-dev \
+            device-tree-compiler
+
+      - name: Prepare kernel headers
+        run: |
+          cd rpi-linux
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- "${KERNEL_DEFCONFIG}"
+          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
+
+      - name: Build driver
+        run: |
+          make obj dtbo ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+            KDIR=$PWD/rpi-linux
