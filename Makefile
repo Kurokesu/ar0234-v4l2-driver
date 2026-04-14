@@ -1,38 +1,51 @@
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2026, UAB Kurokesu. All rights reserved.
 #
-# Makefile for AR0234 camera driver on Raspberry Pi (device tree overlay + kernel module)
+# Makefile for camera driver on Raspberry Pi (device tree overlay + kernel module)
 
 SRC_DIR   := $(shell pwd)
 BUILD_DIR := build
 
-DTS       := ar0234-overlay.dts
-DTBO      := ar0234.dtbo
+DRV_SRC   := $(wildcard *.c)
+DRV_NAME  := $(basename $(DRV_SRC))
+DTS       := $(wildcard *-overlay.dts)
+DTBO      := $(DRV_NAME).dtbo
 DTC       := dtc
 DTC_FLAGS := -Wno-interrupts_property -Wno-unit_address_vs_reg -@ -I dts -O dtb
 
 KDIR      ?= /lib/modules/$(shell uname -r)/build
 CCFLAGS   := -Werror
 
-.PHONY: all dtbo module clean
+ifeq ($(DRV_SRC),)
+  $(error No .c source file found in project root)
+endif
 
-all: $(BUILD_DIR)/$(DTBO) $(BUILD_DIR)/ar0234.ko
+ifeq ($(DTS),)
+  $(error No *-overlay.dts file found in project root)
+endif
+
+.PHONY: all obj dtbo module clean
+
+all: $(BUILD_DIR)/$(DTBO) $(BUILD_DIR)/$(DRV_NAME).ko
+
+obj: $(BUILD_DIR)/$(DRV_NAME).o
 
 dtbo: $(BUILD_DIR)/$(DTBO)
-module: $(BUILD_DIR)/ar0234.ko
+
+module: $(BUILD_DIR)/$(DRV_NAME).ko
 
 $(BUILD_DIR)/$(DTBO): $(DTS) | $(BUILD_DIR)
 	$(DTC) $(DTC_FLAGS) -o $@ $<
 
 $(BUILD_DIR)/Kbuild: | $(BUILD_DIR)
 	@echo "ccflags-y += $(CCFLAGS)" > $@
-	@echo "obj-m += ar0234.o" >> $@
-	@ln -sf $(SRC_DIR)/ar0234.c $(BUILD_DIR)/ar0234.c
+	@echo "obj-m += $(DRV_NAME).o" >> $@
+	@ln -sf $(SRC_DIR)/$(DRV_SRC) $(BUILD_DIR)/$(DRV_SRC)
 
-$(BUILD_DIR)/ar0234.o: ar0234.c $(BUILD_DIR)/Kbuild
-	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) ar0234.o
+$(BUILD_DIR)/$(DRV_NAME).o: $(DRV_SRC) $(BUILD_DIR)/Kbuild
+	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) $(DRV_NAME).o
 
-$(BUILD_DIR)/ar0234.ko: ar0234.c $(BUILD_DIR)/Kbuild
+$(BUILD_DIR)/$(DRV_NAME).ko: $(DRV_SRC) $(BUILD_DIR)/Kbuild
 	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) modules
 
 $(BUILD_DIR):
