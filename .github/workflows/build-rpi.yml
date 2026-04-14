@@ -1,4 +1,4 @@
-name: Build (RPi)
+name: Build
 
 permissions:
   contents: read
