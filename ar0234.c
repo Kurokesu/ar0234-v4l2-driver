@@ -1510,6 +1510,7 @@ static int ar0234_probe(struct i2c_client *client)
 {
 	struct ar0234 *ar0234;
 	int ret;
+	int unused_test_var = 42; /* TODO: remove – intentional warning for CI testing */
 
 	ar0234 = devm_kzalloc(&client->dev, sizeof(*ar0234), GFP_KERNEL);
 	if (!ar0234)
