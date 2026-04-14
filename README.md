@@ -6,7 +6,7 @@
 [![Raspberry Pi OS Trixie](https://img.shields.io/badge/Raspberry_Pi_OS-Trixie-blue?logo=raspberrypi)](https://www.debian.org/releases/trixie/)
 [![Kernel 6.12+](https://img.shields.io/badge/kernel-6.12%2B-blue?logo=raspberrypi)](https://github.com/raspberrypi/linux/tree/rpi-6.12.y)
 
-Raspberry Pi kernel driver for Onsemi AR0234CS — a 2.3 MP global shutter 1/2.6" CMOS sensor.
+Raspberry Pi kernel driver for Onsemi AR0234, a 2.3 MP global shutter 1/2.6" CMOS sensor.
 
 - 2-lane and 4-lane MIPI CSI-2 (up to 900 Mbps/lane)
 - 8-bit and 10-bit RAW output
@@ -62,7 +62,7 @@ dtoverlay=ar0234
 Save and exit. Reboot for changes to take effect.
 
 > [!IMPORTANT]
-> Stock `libcamera` does not support AR0234 — you must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
+> Stock `libcamera` does not support AR0234. You must build a patched version for camera to function. See [Build libcamera](#build-libcamera) below.
 
 ## dtoverlay options
 
@@ -101,7 +101,7 @@ dtoverlay=ar0234,4lane
 
 ### link-frequency
 
-Supported link frequencies: 450 MHz (default, 10-bit only) and 360 MHz (8-bit only). Sensor PLL constraints tie bit depth to link frequency — switch to 360 MHz if you need 8-bit output.
+Supported link frequencies: 450 MHz (default, 10-bit only) and 360 MHz (8-bit only). Sensor PLL constraints tie bit depth to link frequency, switch to 360 MHz if you need 8-bit output.
 
 To set link frequency to 360 MHz, append `,link-frequency=360000000`:
 
@@ -135,24 +135,24 @@ dtoverlay=ar0234,link-frequency=360000000
 | 450 MHz | 900 Mbps | 4 | 10 | 1920 | 1200 | 120 fps |
 
 > [!NOTE]
-> These framerates do not apply to pulsed trigger mode — see [external-trigger](#external-trigger).
+> These framerates do not apply to pulsed trigger mode. See [external-trigger](#external-trigger).
 
 > [!TIP]
-> Options can be combined. Example — cam0, 4-lane, 360 MHz:
+> Options can be combined. Example (cam0, 4-lane, 360 MHz):
 > ```ini
 > dtoverlay=ar0234,cam0,4lane,link-frequency=360000000
 > ```
 
 ### Trigger modes
 
-AR0234 supports two external trigger modes. Both use `TRIG` pin on camera module as external signal input. `TRIG` is a **1.8V logic level** input wired directly to sensor. Trigger pulse only initiates capture — exposure time remains controlled by sensor's integration time register.
+AR0234 supports two external trigger modes. Both use `TRIG` pin on camera module as external signal input. `TRIG` is a **1.8V logic level** input wired directly to sensor. Trigger pulse only initiates capture, exposure time remains controlled by sensor's integration time register.
 
 #### external-trigger
 
-Sensor stays in standby and waits for activity on `TRIG` pin. Exposure and readout happen sequentially — readout does not begin until exposure is complete. Two sub-modes are available:
+Sensor stays in standby and waits for activity on `TRIG` pin. Exposure and readout happen sequentially: readout does not begin until exposure is complete. Two sub-modes are available:
 
-- **Pulsed** — each high pulse on `TRIG` pin captures a single frame (minimum pulse width 125 ns — 3 EXTCLK cycles at 24 MHz). Framerate is determined by pulse frequency.
-- **Automatic** — if `TRIG` signal stays high, sensor outputs frames continuously at configured framerate.
+- **Pulsed**: each high pulse on `TRIG` pin captures a single frame (minimum pulse width 125 ns, 3 EXTCLK cycles at 24 MHz). Framerate is determined by pulse frequency.
+- **Automatic**: if `TRIG` signal stays high, sensor outputs frames continuously at configured framerate.
 
 ```ini
 dtoverlay=ar0234,external-trigger
@@ -202,7 +202,7 @@ echo 1 | sudo tee /sys/module/ar0234/parameters/trigger_mode
 ```
 
 > [!NOTE]
-> Module parameter is global — in a multi-camera setup it applies to all AR0234 sensors. To configure each sensor independently, use device tree overlay options instead. Device tree setting takes precedence over module parameter.
+> Module parameter is global: in a multi-camera setup it applies to all AR0234 sensors. To configure each sensor independently, use device tree overlay options instead. Device tree setting takes precedence over module parameter.
 
 ### always-on
 
@@ -224,8 +224,8 @@ dtoverlay=ar0234,flash
 
 By default, flash pulse closely follows exposure period (longer by ~8 µs on 4-lane or ~16 µs on 2-lane due to sensor overhead). The flash signal start can be shifted relative to exposure using `flash-lead` or `flash-lag`:
 
-- **`flash-lead`** — flash starts *before* exposure, extending total flash time
-- **`flash-lag`** — flash starts *after* exposure begins, shortening total flash time
+- **`flash-lead`**: flash starts *before* exposure, extending total flash time
+- **`flash-lag`**: flash starts *after* exposure begins, shortening total flash time
 
 Both accept values in the range 0 to 127, where each unit is approximately **3.4 µs** (4-lane) or **6.8 µs** (2-lane).
 
@@ -331,11 +331,11 @@ meson setup build -Denable_libav=enabled -Denable_drm=enabled -Denable_egl=enabl
 
 Bookworm ships `libavcodec` **59.x** while newer `rpicam-apps` expects **libavcodec >= 60**, causing build errors like "libavcodec API version is too old" (see [Raspberry Pi forum thread](https://forums.raspberrypi.com/viewtopic.php?t=392649)).
 
-- **Keep libav** — check out `rpicam-apps` **v1.9.0** before running `meson setup`:
+- **Keep libav** by checking out `rpicam-apps` **v1.9.0** before running `meson setup`:
   ```bash
   git checkout v1.9.0
   ```
-- **Disable libav** — if building `rpicam-apps` > v1.9.0:
+- **Disable libav** if building `rpicam-apps` > v1.9.0:
   ```bash
   meson setup build -Denable_libav=disabled -Denable_drm=enabled -Denable_egl=enabled -Denable_qt=enabled -Denable_opencv=disabled -Denable_tflite=disabled -Denable_hailo=disabled
   ```
