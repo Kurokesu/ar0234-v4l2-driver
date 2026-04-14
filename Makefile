@@ -12,6 +12,7 @@ DTC       := dtc
 DTC_FLAGS := -Wno-interrupts_property -Wno-unit_address_vs_reg -@ -I dts -O dtb
 
 KDIR      ?= /lib/modules/$(shell uname -r)/build
+CCFLAGS   := -Werror
 
 .PHONY: all dtbo module clean
 
@@ -24,7 +25,8 @@ $(BUILD_DIR)/$(DTBO): $(DTS) | $(BUILD_DIR)
 	$(DTC) $(DTC_FLAGS) -o $@ $<
 
 $(BUILD_DIR)/Kbuild: | $(BUILD_DIR)
-	@echo "obj-m += ar0234.o" > $@
+	@echo "ccflags-y += $(CCFLAGS)" > $@
+	@echo "obj-m += ar0234.o" >> $@
 	@ln -sf $(SRC_DIR)/ar0234.c $(BUILD_DIR)/ar0234.c
 
 $(BUILD_DIR)/ar0234.o: ar0234.c $(BUILD_DIR)/Kbuild
