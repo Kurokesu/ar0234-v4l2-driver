@@ -66,5 +66,5 @@ jobs:
 
       - name: Build driver
         run: |
-          make build/ar0234.o dtbo ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
+          make obj dtbo ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
             KDIR=$PWD/rpi-linux
