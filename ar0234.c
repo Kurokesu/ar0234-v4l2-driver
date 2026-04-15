@@ -136,7 +136,7 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_TEST_PATTERN_DISABLED 0
 #define AR0234_TEST_PATTERN_SOLID_COLOR 1
 #define AR0234_TEST_PATTERN_COLOR_BARS 2
-#define AR0234_TEST_PATTERN_GREY_BARS 3
+#define AR0234_TEST_PATTERN_FADE_TO_GREY 3
 #define AR0234_TEST_PATTERN_WALKING_1S 256
 
 /* Trigger modes */
@@ -330,7 +330,7 @@ static const char *const ar0234_test_pattern_menu[] = {
 	"Disabled",
 	"Solid Color",
 	"Vertical Color Bars",
-	"Grey Color Bars",
+	"Fade to Grey Color Bars",
 	"Walking 1s",
 };
 
@@ -338,7 +338,7 @@ static const unsigned int ar0234_test_pattern_val[] = {
 	AR0234_TEST_PATTERN_DISABLED,
 	AR0234_TEST_PATTERN_SOLID_COLOR,
 	AR0234_TEST_PATTERN_COLOR_BARS,
-	AR0234_TEST_PATTERN_GREY_BARS,
+	AR0234_TEST_PATTERN_FADE_TO_GREY,
 	AR0234_TEST_PATTERN_WALKING_1S,
 };
 // clang-format on
