@@ -129,19 +129,14 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_DGTL_GAIN_STEP 1
 
 /* Test Patterns */
-#define AR0234_TESTP_COLOUR_MIN 0
-#define AR0234_TESTP_COLOUR_MAX 0x03FF
-#define AR0234_TESTP_COLOUR_STEP 1
-#define AR0234_TESTP_RED_DEFAULT AR0234_TESTP_COLOUR_MAX
-#define AR0234_TESTP_GREENR_DEFAULT 0
-#define AR0234_TESTP_BLUE_DEFAULT 0
-#define AR0234_TESTP_GREENB_DEFAULT 0
+#define AR0234_TEST_PATTERN_COLOR_MIN 0
+#define AR0234_TEST_PATTERN_COLOR_MAX 0x03FF
+#define AR0234_TEST_PATTERN_COLOR_STEP 1
 
 #define AR0234_TEST_PATTERN_DISABLED 0
 #define AR0234_TEST_PATTERN_SOLID_COLOR 1
-#define AR0234_TEST_PATTERN_VERTICAL_COLOR_BARS 2
-#define AR0234_TEST_PATTERN_FADE_TO_GREY 3
-#define AR0234_TEST_PATTERN_PN9 4
+#define AR0234_TEST_PATTERN_COLOR_BARS 2
+#define AR0234_TEST_PATTERN_GREY_BARS 3
 #define AR0234_TEST_PATTERN_WALKING_1S 256
 
 /* Trigger modes */
@@ -330,23 +325,23 @@ static const struct cci_reg_sequence ar0234_960x600_config[] = {
 	{ AR0234_REG_READ_MODE, 0x3000 },
 };
 
+// clang-format off
 static const char *const ar0234_test_pattern_menu[] = {
 	"Disabled",
 	"Solid Color",
 	"Vertical Color Bars",
-	"Fade to Grey Vertical Color Bars",
-	"PN9",
+	"Grey Color Bars",
 	"Walking 1s",
 };
 
 static const unsigned int ar0234_test_pattern_val[] = {
 	AR0234_TEST_PATTERN_DISABLED,
 	AR0234_TEST_PATTERN_SOLID_COLOR,
-	AR0234_TEST_PATTERN_VERTICAL_COLOR_BARS,
-	AR0234_TEST_PATTERN_FADE_TO_GREY,
-	AR0234_TEST_PATTERN_PN9,
+	AR0234_TEST_PATTERN_COLOR_BARS,
+	AR0234_TEST_PATTERN_GREY_BARS,
 	AR0234_TEST_PATTERN_WALKING_1S,
 };
+// clang-format on
 
 /* regulator supplies */
 static const char *const ar0234_supply_names[] = {
@@ -1330,10 +1325,10 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 		*/
 		v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 				  V4L2_CID_TEST_PATTERN_RED + i,
-				  AR0234_TESTP_COLOUR_MIN,
-				  AR0234_TESTP_COLOUR_MAX,
-				  AR0234_TESTP_COLOUR_STEP,
-				  AR0234_TESTP_COLOUR_MAX);
+				  AR0234_TEST_PATTERN_COLOR_MIN,
+				  AR0234_TEST_PATTERN_COLOR_MAX,
+				  AR0234_TEST_PATTERN_COLOR_STEP,
+				  AR0234_TEST_PATTERN_COLOR_MAX);
 		/* The "Solid color" pattern is white by default */
 	}
 
