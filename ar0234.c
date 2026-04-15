@@ -647,9 +647,24 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 				ctrl->val, NULL);
 		break;
 	case V4L2_CID_TEST_PATTERN:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_PATTERN_MODE,
-			//	       AR0234_REG_VALUE_16BIT,
-			//	       ar0234_test_pattern_val[ctrl->val]);
+		ret = cci_write(ar0234->regmap, AR0234_REG_TEST_PATTERN_MODE,
+				ar0234_test_pattern_val[ctrl->val], NULL);
+		break;
+	case V4L2_CID_TEST_PATTERN_RED:
+		ret = cci_write(ar0234->regmap, AR0234_REG_TEST_DATA_RED,
+				ctrl->val, NULL);
+		break;
+	case V4L2_CID_TEST_PATTERN_GREENR:
+		ret = cci_write(ar0234->regmap, AR0234_REG_TEST_DATA_GREENR,
+				ctrl->val, NULL);
+		break;
+	case V4L2_CID_TEST_PATTERN_BLUE:
+		ret = cci_write(ar0234->regmap, AR0234_REG_TEST_DATA_BLUE,
+				ctrl->val, NULL);
+		break;
+	case V4L2_CID_TEST_PATTERN_GREENB:
+		ret = cci_write(ar0234->regmap, AR0234_REG_TEST_DATA_GREENB,
+				ctrl->val, NULL);
 		break;
 	case V4L2_CID_HFLIP:
 	case V4L2_CID_VFLIP:
@@ -662,21 +677,6 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 				ar0234->mode.format->height + ctrl->val -
 					AR0234_FLL_OVERHEAD,
 				NULL);
-		break;
-	case V4L2_CID_TEST_PATTERN_RED:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TEST_DATA_RED,CCI_REG16(0x3072)	       AR0234_REG_VALUE_16BIT, ctrl->val);
-		break;
-	case V4L2_CID_TEST_PATTERN_GREENR:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_GREENR,
-			//	       AR0234_REG_VALUE_16BIT, ctrl->val);
-		break;
-	case V4L2_CID_TEST_PATTERN_BLUE:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_BLUE,
-		//		       AR0234_REG_VALUE_16BIT, ctrl->val);
-		break;
-	case V4L2_CID_TEST_PATTERN_GREENB:
-		ret = 0; //ar0234_write_reg(ar0234, AR0234_REG_TESTP_GREENB,
-			//	       AR0234_REG_VALUE_16BIT, ctrl->val);
 		break;
 	case V4L2_CID_HBLANK:
 		ret = -EINVAL;
