@@ -1,4 +1,4 @@
-name: Code format
+name: Code style
 
 permissions:
   contents: read
