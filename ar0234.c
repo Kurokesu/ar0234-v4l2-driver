@@ -317,7 +317,6 @@ static const struct cci_reg_sequence ar0234_960x600_config[] = {
 	{ AR0234_REG_READ_MODE, 0x3000 },
 };
 
-// clang-format off
 static const char *const ar0234_test_pattern_menu[] = {
 	"Disabled",
 	"Solid Color",
@@ -327,13 +326,12 @@ static const char *const ar0234_test_pattern_menu[] = {
 };
 
 static const unsigned int ar0234_test_pattern_val[] = {
-	AR0234_TEST_PATTERN_DISABLED,
-	AR0234_TEST_PATTERN_SOLID_COLOR,
-	AR0234_TEST_PATTERN_COLOR_BARS,
-	AR0234_TEST_PATTERN_FADE_TO_GREY,
-	AR0234_TEST_PATTERN_WALKING_1S,
+	AR0234_TEST_PATTERN_DISABLED, /* Disabled */
+	AR0234_TEST_PATTERN_SOLID_COLOR, /* Solid Color */
+	AR0234_TEST_PATTERN_COLOR_BARS, /* Vertical Color Bars */
+	AR0234_TEST_PATTERN_FADE_TO_GREY, /* Fade to Grey Color Bars */
+	AR0234_TEST_PATTERN_WALKING_1S, /* Walking 1s */
 };
-// clang-format on
 
 /* regulator supplies */
 static const char *const ar0234_supply_names[] = {
