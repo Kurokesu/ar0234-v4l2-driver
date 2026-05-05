@@ -1371,8 +1371,7 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 	mutex_destroy(&ar0234->mutex);
 }
 
-static int ar0234_parse_hw_config(struct ar0234 *ar0234,
-				  struct i2c_client *client)
+static int ar0234_parse_hw_config(struct ar0234 *ar0234)
 {
 	struct device *dev = ar0234->dev;
 	struct v4l2_fwnode_endpoint ep_cfg = {
@@ -1450,7 +1449,9 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 
 	if (i == ARRAY_SIZE(ar0234_pll_configs)) {
 		ret = dev_err_probe(dev, -EINVAL,
-				    "unsupported extclk/link combo\n");
+				    "no PLL config for %lu/%llu Hz\n",
+				    extclk_frequency,
+				    ep_cfg.link_frequencies[0]);
 		goto error_out;
 	}
 
@@ -1504,7 +1505,7 @@ static int ar0234_probe(struct i2c_client *client)
 	v4l2_i2c_subdev_init(&ar0234->sd, client, &ar0234_subdev_ops);
 
 	/* Check the hardware configuration in device tree */
-	ret = ar0234_parse_hw_config(ar0234, client);
+	ret = ar0234_parse_hw_config(ar0234);
 	if (ret)
 		return ret;
 
