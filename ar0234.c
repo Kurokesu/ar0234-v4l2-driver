@@ -1544,6 +1544,9 @@ static int ar0234_probe(struct i2c_client *client)
 		goto error_power_off;
 	usleep_range(100, 110);
 
+	/* Initialize default format */
+	ar0234_set_default_format(ar0234);
+
 	ret = ar0234_init_controls(ar0234);
 	if (ret)
 		goto error_power_off;
@@ -1557,9 +1560,6 @@ static int ar0234_probe(struct i2c_client *client)
 	/* Initialize source pads */
 	ar0234->pad[IMAGE_PAD].flags = MEDIA_PAD_FL_SOURCE;
 	ar0234->pad[METADATA_PAD].flags = MEDIA_PAD_FL_SOURCE;
-
-	/* Initialize default format */
-	ar0234_set_default_format(ar0234);
 
 	ret = media_entity_pads_init(&ar0234->sd.entity, NUM_PADS, ar0234->pad);
 	if (ret) {
