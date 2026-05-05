@@ -223,7 +223,7 @@ static const struct cci_reg_sequence ar0234_pll_config_24_360_8bit[] = {
 	{ AR0234_REG_MIPI_TIMING_3, 0x028B },
 	{ AR0234_REG_MIPI_TIMING_4, 0x0D89 },
 	{ AR0234_REG_MIPI_CNTRL, 0x002A },
-	{ AR0234_REG_DATA_FORMAT_BITS, 0x0808 }, // 8bit in/out
+	{ AR0234_REG_DATA_FORMAT_BITS, 0x0808 }, /* 8-bit in/out */
 };
 
 /*
@@ -247,7 +247,7 @@ static const struct cci_reg_sequence ar0234_pll_config_24_450_10bit[] = {
 	{ AR0234_REG_MIPI_TIMING_3, 0X030B },
 	{ AR0234_REG_MIPI_TIMING_4, 0X0D89 },
 	{ AR0234_REG_MIPI_CNTRL, 0x002B },
-	{ AR0234_REG_DATA_FORMAT_BITS, 0x0A0A }, // 10bit in/out
+	{ AR0234_REG_DATA_FORMAT_BITS, 0x0A0A }, /* 10-bit in/out */
 };
 
 static const struct cci_reg_sequence common_init[] = {
@@ -548,7 +548,7 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	try_fmt_meta->code = MEDIA_BUS_FMT_SENSOR_DATA;
 	try_fmt_meta->field = V4L2_FIELD_NONE;
 
-	/* Initialize try_crop rectangle. */
+	/* Initialize try_crop rectangle */
 	try_crop = v4l2_subdev_state_get_crop(fh->state, IMAGE_PAD);
 	try_crop->top = AR0234_PIXEL_ARRAY_TOP;
 	try_crop->left = AR0234_PIXEL_ARRAY_LEFT;
@@ -605,7 +605,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 		ret = cci_write(ar0234->regmap,
 				AR0234_REG_GROUPED_PARAMETER_HOLD, false, &ret);
 
-		/* Update cached value. */
+		/* Update cached value */
 		ar0234->mfr_30ba = mfr_30ba_val;
 	} else {
 		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
@@ -791,7 +791,7 @@ static int __ar0234_get_pad_format(struct ar0234 *ar0234,
 	if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 		struct v4l2_mbus_framefmt *try_fmt =
 			v4l2_subdev_state_get_format(sd_state, fmt->pad);
-		/* update the code which could change due to vflip or hflip: */
+		/* Update the code which could change due to vflip or hflip */
 		try_fmt->code = fmt->pad == IMAGE_PAD ?
 					ar0234_get_format_code(ar0234) :
 					MEDIA_BUS_FMT_SENSOR_DATA;
