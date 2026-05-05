@@ -6,8 +6,18 @@ permissions:
 on:
   push:
     branches: [main]
+    paths:
+      - '*.c'
+      - '*.dts'
+      - 'Makefile'
+      - '.github/workflows/build-rpi.yml'
   pull_request:
     branches: [main]
+    paths:
+      - '*.c'
+      - '*.dts'
+      - 'Makefile'
+      - '.github/workflows/build-rpi.yml'
 
 jobs:
   build:
