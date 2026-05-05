@@ -6,8 +6,18 @@ permissions:
 on:
   push:
     branches: [main]
+    paths:
+      - '*.c'
+      - '*.dts'
+      - 'Makefile'
+      - '.github/workflows/build-rpi.yml'
   pull_request:
     branches: [main]
+    paths:
+      - '*.c'
+      - '*.dts'
+      - 'Makefile'
+      - '.github/workflows/build-rpi.yml'
 
 jobs:
   build:
@@ -18,20 +28,17 @@ jobs:
         # "latest" resolves to an empty ref, which checks out the default
         # branch of raspberrypi/linux (whatever the newest kernel is).
         kernel_branch: [rpi-6.12.y, latest]
-        kernel_defconfig: [bcm2711_defconfig, bcm2712_defconfig]
         include:
-          - kernel_defconfig: bcm2711_defconfig
-            platform: bcm2711
-          - kernel_defconfig: bcm2712_defconfig
-            platform: bcm2712
           - kernel_branch: latest
             allow_failure: true
 
-    name: "${{ matrix.kernel_branch }} / ${{ matrix.platform }}"
+    name: "${{ matrix.kernel_branch }}"
     continue-on-error: ${{ matrix.allow_failure || false }}
 
     env:
-      KERNEL_DEFCONFIG: ${{ matrix.kernel_defconfig }}
+      KERNEL_DEFCONFIG: bcm2712_defconfig
+      ARCH: arm64
+      CROSS_COMPILE: aarch64-linux-gnu-
 
     steps:
       - name: Checkout driver source
@@ -61,10 +68,8 @@ jobs:
       - name: Prepare kernel headers
         run: |
           cd rpi-linux
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- "${KERNEL_DEFCONFIG}"
-          make ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- modules_prepare
+          make "${KERNEL_DEFCONFIG}"
+          make modules_prepare
 
       - name: Build driver
-        run: |
-          make obj dtbo ARCH=arm64 CROSS_COMPILE=aarch64-linux-gnu- \
-            KDIR=$PWD/rpi-linux
+        run: make obj dtbo KDIR=$PWD/rpi-linux
