@@ -1374,6 +1374,7 @@ static void ar0234_free_controls(struct ar0234 *ar0234)
 static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 				  struct i2c_client *client)
 {
+	struct device *dev = ar0234->dev;
 	struct v4l2_fwnode_endpoint ep_cfg = {
 		.bus_type = V4L2_MBUS_CSI2_DPHY,
 	};
@@ -1386,33 +1387,29 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
 		hw_config->supplies[i].supply = ar0234_supply_names[i];
 
-	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
+	ret = devm_regulator_bulk_get(dev, AR0234_NUM_SUPPLIES,
 				      hw_config->supplies);
 	if (ret)
-		return dev_err_probe(ar0234->dev, ret,
-				     "failed to get regulators\n");
+		return dev_err_probe(dev, ret, "failed to get regulators\n");
 
 	/* Get optional reset pin */
 	hw_config->gpio_reset =
-		devm_gpiod_get_optional(ar0234->dev, "reset", GPIOD_OUT_HIGH);
+		devm_gpiod_get_optional(dev, "reset", GPIOD_OUT_HIGH);
 
 	/* Get input clock (extclk) */
-	hw_config->extclk = devm_clk_get(ar0234->dev, "extclk");
+	hw_config->extclk = devm_clk_get(dev, "extclk");
 	if (IS_ERR(hw_config->extclk))
-		return dev_err_probe(ar0234->dev, PTR_ERR(hw_config->extclk),
+		return dev_err_probe(dev, PTR_ERR(hw_config->extclk),
 				     "failed to get extclk\n");
 
-	endpoint =
-		fwnode_graph_get_next_endpoint(dev_fwnode(ar0234->dev), NULL);
+	endpoint = fwnode_graph_get_next_endpoint(dev_fwnode(dev), NULL);
 	if (!endpoint)
-		return dev_err_probe(ar0234->dev, -ENXIO,
-				     "endpoint node not found\n");
+		return dev_err_probe(dev, -ENXIO, "endpoint node not found\n");
 
 	ret = v4l2_fwnode_endpoint_alloc_parse(endpoint, &ep_cfg);
 	fwnode_handle_put(endpoint);
 	if (ret)
-		return dev_err_probe(ar0234->dev, ret,
-				     "failed to parse endpoint\n");
+		return dev_err_probe(dev, ret, "failed to parse endpoint\n");
 
 	/* Check the number of MIPI CSI2 data lanes */
 	switch (ep_cfg.bus.mipi_csi2.num_data_lanes) {
@@ -1423,7 +1420,7 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 		hw_config->lane_count_id = AR0234_LANE_COUNT_ID_4LANE;
 		break;
 	default:
-		ret = dev_err_probe(ar0234->dev, -EINVAL,
+		ret = dev_err_probe(dev, -EINVAL,
 				    "invalid number of CSI2 data lanes %d\n",
 				    ep_cfg.bus.mipi_csi2.num_data_lanes);
 		goto error_out;
@@ -1433,9 +1430,8 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 
 	/* Check the link frequency set in device tree */
 	if (!ep_cfg.nr_of_link_frequencies) {
-		ret = dev_err_probe(
-			ar0234->dev, -EINVAL,
-			"link-frequency property not found in DT\n");
+		ret = dev_err_probe(dev, -EINVAL,
+				    "link-frequency not found in DT\n");
 		goto error_out;
 	}
 
@@ -1446,34 +1442,30 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	 * and given lane rate.
 	 */
 	for (i = 0; i < ARRAY_SIZE(ar0234_pll_configs); i++) {
-		if ((ar0234_pll_configs[i].freq_extclk == extclk_frequency) &&
-		    (ar0234_pll_configs[i].freq_link ==
-		     ep_cfg.link_frequencies[0]))
+		if (ar0234_pll_configs[i].freq_extclk == extclk_frequency &&
+		    ar0234_pll_configs[i].freq_link ==
+			    ep_cfg.link_frequencies[0])
 			break;
 	}
 
 	if (i == ARRAY_SIZE(ar0234_pll_configs)) {
-		ret = dev_err_probe(
-			ar0234->dev, -EINVAL,
-			"no valid sensor mode defined for EXTCLK %luHz\
-			 and link frequency %lluHz\n",
-			extclk_frequency, ep_cfg.link_frequencies[0]);
+		ret = dev_err_probe(dev, -EINVAL,
+				    "unsupported extclk/link combo\n");
 		goto error_out;
 	}
 
 	ar0234->pll_config = &ar0234_pll_configs[i];
 
-	ret = of_property_read_u32(client->dev.of_node, "trigger-mode", &tm);
+	ret = of_property_read_u32(dev->of_node, "trigger-mode", &tm);
 	ar0234->hw_config.trigger_mode = (ret == 0) ? tm : -1;
 
-	hw_config->flash_enable =
-		of_property_read_bool(client->dev.of_node, "flash");
+	hw_config->flash_enable = of_property_read_bool(dev->of_node, "flash");
 
 	if (hw_config->flash_enable) {
 		u32 lead = 0, lag = 0;
 
-		of_property_read_u32(client->dev.of_node, "flash-lead", &lead);
-		of_property_read_u32(client->dev.of_node, "flash-lag", &lag);
+		of_property_read_u32(dev->of_node, "flash-lead", &lead);
+		of_property_read_u32(dev->of_node, "flash-lag", &lag);
 
 		if (lead)
 			hw_config->flash_delay = -(s8)lead;
@@ -1481,11 +1473,10 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 			hw_config->flash_delay = (s8)lag;
 	}
 
-	dev_info(
-		ar0234->dev,
-		"extclk: %luHz, link_frequency: %lluHz, lanes: %d, trigger_mode: %d, flash: %s%s\n",
-		extclk_frequency, ep_cfg.link_frequencies[0],
-		hw_config->num_data_lanes, hw_config->trigger_mode,
+	dev_info(dev, "extclk: %luHz, link: %lluHz, lanes: %d\n",
+		 extclk_frequency, ep_cfg.link_frequencies[0],
+		 hw_config->num_data_lanes);
+	dev_dbg(dev, "trigger_mode: %d, flash: %s%s\n", hw_config->trigger_mode,
 		hw_config->flash_enable ? "enabled" : "disabled",
 		(hw_config->flash_enable && hw_config->flash_delay) ?
 			((hw_config->flash_delay < 0) ? " (lead)" : " (lag)") :
@@ -1635,14 +1626,14 @@ static const struct of_device_id ar0234_dt_ids[] = {
 };
 MODULE_DEVICE_TABLE(of, ar0234_dt_ids);
 
-static const struct dev_pm_ops ar0234_pm_ops = { SET_RUNTIME_PM_OPS(
-	ar0234_power_off, ar0234_power_on, NULL) };
+static DEFINE_RUNTIME_DEV_PM_OPS(ar0234_pm_ops, ar0234_power_off,
+				 ar0234_power_on, NULL);
 
 static struct i2c_driver ar0234_i2c_driver = {
 	.driver = {
 		.name = "ar0234",
 		.of_match_table	= ar0234_dt_ids,
-		.pm = &ar0234_pm_ops,
+		.pm = pm_ptr(&ar0234_pm_ops),
 	},
 	.probe = ar0234_probe,
 	.remove = ar0234_remove,
