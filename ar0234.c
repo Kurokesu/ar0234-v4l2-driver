@@ -89,6 +89,11 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_FREQ_EXTCLK 24000000
 #define AR0234_FREQ_PIXCLK_45MHZ 45000000
 #define AR0234_FREQ_PIXCLK_90MHZ 90000000
+
+/*
+ * AR0234 uses different link frequencies depending on
+ * output bit depth. 360 MHz for 8-bit, 450 MHz for 10-bit.
+ */
 #define AR0234_FREQ_LINK_8BIT 360000000
 #define AR0234_FREQ_LINK_10BIT 450000000
 
