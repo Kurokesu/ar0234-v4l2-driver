@@ -1163,14 +1163,13 @@ static int ar0234_power_on(struct device *dev)
 	ret = regulator_bulk_enable(AR0234_NUM_SUPPLIES,
 				    ar0234->hw_config.supplies);
 	if (ret) {
-		dev_err(&client->dev, "%s: failed to enable regulators\n",
-			__func__);
+		dev_err(dev, "%s: failed to enable regulators\n", __func__);
 		return ret;
 	}
 
 	ret = clk_prepare_enable(ar0234->hw_config.extclk);
 	if (ret) {
-		dev_err(&client->dev, "%s: failed to enable clock\n", __func__);
+		dev_err(dev, "%s: failed to enable clock\n", __func__);
 		goto reg_off;
 	}
 
