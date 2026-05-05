@@ -1642,7 +1642,7 @@ static struct i2c_driver ar0234_i2c_driver = {
 
 module_i2c_driver(ar0234_i2c_driver);
 
-MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com");
-MODULE_AUTHOR("Danius Kalvaitis <danius@kurokesu.com");
+MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
+MODULE_AUTHOR("Danius Kalvaitis <danius@kurokesu.com>");
 MODULE_DESCRIPTION("OnSemi AR0234 sensor driver");
 MODULE_LICENSE("GPL");
