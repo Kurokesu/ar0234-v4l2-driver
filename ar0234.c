@@ -165,9 +165,9 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_REG_ADDRESS_BITS 16
 
 /* 1 format code for selected link frequency */
-#define AR0234_FMT_CODE_AMOUNT 1
+#define AR0234_NUM_FMT_CODES 1
 
-#define AR0234_SUPPLY_AMOUNT ARRAY_SIZE(ar0234_supply_names)
+#define AR0234_NUM_SUPPLIES ARRAY_SIZE(ar0234_supply_names)
 
 enum pad_types {
 	IMAGE_PAD,
@@ -180,10 +180,9 @@ struct ar0234_reg_sequence {
 	const struct cci_reg_sequence *regs;
 };
 
-enum ar0234_lane_mode_id {
-	AR0234_LANE_MODE_ID_2LANE = 0,
-	AR0234_LANE_MODE_ID_4LANE,
-	AR0234_LANE_MODE_ID_AMOUNT,
+enum ar0234_lane_count_id {
+	AR0234_LANE_COUNT_ID_2LANE = 0,
+	AR0234_LANE_COUNT_ID_4LANE,
 };
 
 /* Mode : resolution and related config&values */
@@ -443,18 +442,18 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 	},
 };
 
-/* Pixel clock frequencies are based on lane amount */
+/* Pixel clock frequencies are based on lane count */
 static const u32 ar0234_freq_pixclk[] = {
-	[AR0234_LANE_MODE_ID_2LANE] = AR0234_FREQ_PIXCLK_45MHZ,
-	[AR0234_LANE_MODE_ID_4LANE] = AR0234_FREQ_PIXCLK_90MHZ,
+	[AR0234_LANE_COUNT_ID_2LANE] = AR0234_FREQ_PIXCLK_45MHZ,
+	[AR0234_LANE_COUNT_ID_4LANE] = AR0234_FREQ_PIXCLK_90MHZ,
 };
 
 struct ar0234_hw_config {
 	struct clk *extclk;
-	struct regulator_bulk_data supplies[AR0234_SUPPLY_AMOUNT];
+	struct regulator_bulk_data supplies[AR0234_NUM_SUPPLIES];
 	struct gpio_desc *gpio_reset;
 	unsigned int num_data_lanes;
-	enum ar0234_lane_mode_id lane_mode;
+	enum ar0234_lane_count_id lane_count_id;
 	int trigger_mode;
 	bool flash_enable;
 	s8 flash_delay;
@@ -585,7 +584,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	 * 0x30BA register value lookup based on PIXCLK frequency
 	 * and analog gain level.
 	 */
-	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_count_id] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
 		if (analog_gain < 0x36) {
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(6);
@@ -715,7 +714,7 @@ static int ar0234_enum_mbus_code(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (code->pad == IMAGE_PAD) {
-		if (code->index >= AR0234_FMT_CODE_AMOUNT)
+		if (code->index >= AR0234_NUM_FMT_CODES)
 			return -EINVAL;
 
 		code->code = ar0234_get_format_code(ar0234);
@@ -974,7 +973,7 @@ static int ar0234_pixclk_config(struct ar0234 *ar0234)
 {
 	int ret = 0;
 
-	if (ar0234_freq_pixclk[ar0234->hw_config.lane_mode] ==
+	if (ar0234_freq_pixclk[ar0234->hw_config.lane_count_id] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
 		ret = cci_multi_reg_write(ar0234->regmap,
 					  pixclk_45mhz_mfr_settings,
@@ -1054,11 +1053,11 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		return ret;
 	}
 
-	/* Configure lane amount */
+	/* Configure lane count */
 	ret = cci_write(ar0234->regmap, AR0234_REG_SERIAL_FORMAT,
 			(0x0200 | ar0234->hw_config.num_data_lanes), NULL);
 	if (ret < 0) {
-		dev_err(&client->dev, "%s failed to configure lane amount\n",
+		dev_err(&client->dev, "%s failed to configure lane count\n",
 			__func__);
 		return ret;
 	}
@@ -1175,7 +1174,7 @@ static int ar0234_power_on(struct device *dev)
 	struct ar0234 *ar0234 = to_ar0234(sd);
 	int ret;
 
-	ret = regulator_bulk_enable(AR0234_SUPPLY_AMOUNT,
+	ret = regulator_bulk_enable(AR0234_NUM_SUPPLIES,
 				    ar0234->hw_config.supplies);
 	if (ret) {
 		dev_err(&client->dev, "%s: failed to enable regulators\n",
@@ -1196,8 +1195,7 @@ static int ar0234_power_on(struct device *dev)
 	return 0;
 
 reg_off:
-	regulator_bulk_disable(AR0234_SUPPLY_AMOUNT,
-			       ar0234->hw_config.supplies);
+	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
 
 	return ret;
 }
@@ -1209,8 +1207,7 @@ static int ar0234_power_off(struct device *dev)
 	struct ar0234 *ar0234 = to_ar0234(sd);
 
 	gpiod_set_value_cansleep(ar0234->hw_config.gpio_reset, 0);
-	regulator_bulk_disable(AR0234_SUPPLY_AMOUNT,
-			       ar0234->hw_config.supplies);
+	regulator_bulk_disable(AR0234_NUM_SUPPLIES, ar0234->hw_config.supplies);
 	clk_disable_unprepare(ar0234->hw_config.extclk);
 
 	return 0;
@@ -1284,7 +1281,7 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 	ctrl_hdlr->lock = &ar0234->mutex;
 
 	/* By default, PIXEL_RATE is read only */
-	pixel_rate = ar0234_freq_pixclk[ar0234->hw_config.lane_mode];
+	pixel_rate = ar0234_freq_pixclk[ar0234->hw_config.lane_count_id];
 	ctrl = v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 				 V4L2_CID_PIXEL_RATE, pixel_rate, pixel_rate, 1,
 				 pixel_rate);
@@ -1396,10 +1393,10 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	int ret = -EINVAL;
 	unsigned int i, tm;
 
-	for (i = 0; i < AR0234_SUPPLY_AMOUNT; i++)
+	for (i = 0; i < AR0234_NUM_SUPPLIES; i++)
 		hw_config->supplies[i].supply = ar0234_supply_names[i];
 
-	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_SUPPLY_AMOUNT,
+	ret = devm_regulator_bulk_get(ar0234->dev, AR0234_NUM_SUPPLIES,
 				      hw_config->supplies);
 	if (ret)
 		return dev_err_probe(ar0234->dev, ret,
@@ -1430,10 +1427,10 @@ static int ar0234_parse_hw_config(struct ar0234 *ar0234,
 	/* Check the number of MIPI CSI2 data lanes */
 	switch (ep_cfg.bus.mipi_csi2.num_data_lanes) {
 	case 2:
-		hw_config->lane_mode = AR0234_LANE_MODE_ID_2LANE;
+		hw_config->lane_count_id = AR0234_LANE_COUNT_ID_2LANE;
 		break;
 	case 4:
-		hw_config->lane_mode = AR0234_LANE_MODE_ID_4LANE;
+		hw_config->lane_count_id = AR0234_LANE_COUNT_ID_4LANE;
 		break;
 	default:
 		ret = dev_err_probe(ar0234->dev, -EINVAL,
