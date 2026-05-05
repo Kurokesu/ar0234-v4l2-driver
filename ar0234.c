@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0
 /*
- * A V4L2 driver for OnSemi AR0234 cameras.
+ * A V4L2 driver for onsemi AR0234 cameras.
  *
  * Copyright (C) 2021, Raspberry Pi (Trading) Ltd
  * Copyright (C) 2025-2026, UAB Kurokesu
@@ -1641,5 +1641,5 @@ module_i2c_driver(ar0234_i2c_driver);
 
 MODULE_AUTHOR("Dave Stevenson <dave.stevenson@raspberrypi.com>");
 MODULE_AUTHOR("Danius Kalvaitis <danius@kurokesu.com>");
-MODULE_DESCRIPTION("OnSemi AR0234 sensor driver");
+MODULE_DESCRIPTION("onsemi AR0234 sensor driver");
 MODULE_LICENSE("GPL");
