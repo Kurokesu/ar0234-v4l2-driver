@@ -190,8 +190,8 @@ enum ar0234_lane_count_id {
 	AR0234_LANE_COUNT_ID_4LANE,
 };
 
-/* Mode : resolution and related config&values */
-struct ar0234_format {
+/* Sensor mode: resolution, crop and register sequence */
+struct ar0234_mode {
 	/* Frame width */
 	unsigned int width;
 	/* Frame height */
@@ -200,11 +200,6 @@ struct ar0234_format {
 	struct v4l2_rect crop;
 
 	struct ar0234_reg_sequence reg_sequence;
-};
-
-struct ar0234_mode {
-	struct ar0234_format const *format;
-	u16 mfr_30ba;
 };
 
 /*
@@ -349,7 +344,7 @@ static const char *const ar0234_supply_names[] = {
 };
 
 /* Format configs */
-static const struct ar0234_format ar0234_formats[] = {
+static const struct ar0234_mode ar0234_modes[] = {
 	{
 		.width = 1920,
 		.height = 1200,
@@ -486,7 +481,8 @@ struct ar0234 {
 	struct v4l2_ctrl *vblank;
 	struct v4l2_ctrl *hblank;
 
-	struct ar0234_mode mode;
+	const struct ar0234_mode *cur_mode;
+	u16 mfr_30ba;
 
 	/*
 	* Mutex for serialized access:
@@ -528,11 +524,11 @@ static void ar0234_set_default_format(struct ar0234 *ar0234)
 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, fmt->colorspace,
 							  fmt->ycbcr_enc);
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
-	fmt->width = ar0234_formats[0].width;
-	fmt->height = ar0234_formats[0].height;
+	fmt->width = ar0234_modes[0].width;
+	fmt->height = ar0234_modes[0].height;
 	fmt->field = V4L2_FIELD_NONE;
 
-	ar0234->mode.format = &ar0234_formats[0];
+	ar0234->cur_mode = &ar0234_modes[0];
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -547,8 +543,8 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 	mutex_lock(&ar0234->mutex);
 
 	/* Initialize try_fmt for the image pad */
-	try_fmt_img->width = ar0234_formats[0].width;
-	try_fmt_img->height = ar0234_formats[0].height;
+	try_fmt_img->width = ar0234_modes[0].width;
+	try_fmt_img->height = ar0234_modes[0].height;
 	try_fmt_img->code = ar0234_get_format_code(ar0234);
 	try_fmt_img->field = V4L2_FIELD_NONE;
 
@@ -572,7 +568,7 @@ static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
 
 static void ar0234_adjust_exposure_range(struct ar0234 *ar0234)
 {
-	int exposure_max = ar0234->mode.format->height + ar0234->vblank->val -
+	int exposure_max = ar0234->cur_mode->height + ar0234->vblank->val -
 			   AR0234_FLL_OVERHEAD - 1;
 
 	__v4l2_ctrl_modify_range(ar0234->exposure, ar0234->exposure->minimum,
@@ -607,7 +603,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	}
 
 	/* Use grouped parameter hold when 0x30BA needs to be updated. */
-	if (ar0234->mode.mfr_30ba != mfr_30ba_val) {
+	if (ar0234->mfr_30ba != mfr_30ba_val) {
 		ret = cci_write(ar0234->regmap,
 				AR0234_REG_GROUPED_PARAMETER_HOLD, true, NULL);
 		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
@@ -618,7 +614,7 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 				AR0234_REG_GROUPED_PARAMETER_HOLD, false, &ret);
 
 		/* Update cached value. */
-		ar0234->mode.mfr_30ba = mfr_30ba_val;
+		ar0234->mfr_30ba = mfr_30ba_val;
 	} else {
 		ret = cci_write(ar0234->regmap, AR0234_REG_ANALOG_GAIN,
 				analog_gain, NULL);
@@ -684,7 +680,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		break;
 	case V4L2_CID_VBLANK:
 		ret = cci_write(ar0234->regmap, AR0234_REG_FRAME_LENGTH_LINES,
-				ar0234->mode.format->height + ctrl->val -
+				ar0234->cur_mode->height + ctrl->val -
 					AR0234_FLL_OVERHEAD,
 				NULL);
 		break;
@@ -743,15 +739,15 @@ static int ar0234_enum_frame_size(struct v4l2_subdev *sd,
 		return -EINVAL;
 
 	if (fse->pad == IMAGE_PAD) {
-		if (fse->index >= ARRAY_SIZE(ar0234_formats))
+		if (fse->index >= ARRAY_SIZE(ar0234_modes))
 			return -EINVAL;
 
 		if (fse->code != ar0234_get_format_code(ar0234))
 			return -EINVAL;
 
-		fse->min_width = ar0234_formats[fse->index].width;
+		fse->min_width = ar0234_modes[fse->index].width;
 		fse->max_width = fse->min_width;
-		fse->min_height = ar0234_formats[fse->index].height;
+		fse->min_height = ar0234_modes[fse->index].height;
 		fse->max_height = fse->min_height;
 	} else {
 		if (fse->code != MEDIA_BUS_FMT_SENSOR_DATA || fse->index > 0)
@@ -776,11 +772,11 @@ static void ar0234_reset_colorspace(struct v4l2_mbus_framefmt *fmt)
 }
 
 static void ar0234_update_image_pad_format(struct ar0234 *ar0234,
-					   const struct ar0234_format *format,
+					   const struct ar0234_mode *mode,
 					   struct v4l2_subdev_format *fmt)
 {
-	fmt->format.width = format->width;
-	fmt->format.height = format->height;
+	fmt->format.width = mode->width;
+	fmt->format.height = mode->height;
 	fmt->format.field = V4L2_FIELD_NONE;
 	ar0234_reset_colorspace(&fmt->format);
 }
@@ -810,8 +806,8 @@ static int __ar0234_get_pad_format(struct ar0234 *ar0234,
 		fmt->format = *try_fmt;
 	} else {
 		if (fmt->pad == IMAGE_PAD) {
-			ar0234_update_image_pad_format(
-				ar0234, ar0234->mode.format, fmt);
+			ar0234_update_image_pad_format(ar0234, ar0234->cur_mode,
+						       fmt);
 			fmt->format.code = ar0234_get_format_code(ar0234);
 		} else {
 			ar0234_update_metadata_pad_format(fmt);
@@ -838,17 +834,17 @@ static int ar0234_get_pad_format(struct v4l2_subdev *sd,
 static void ar0234_set_framing_limits(struct ar0234 *ar0234)
 {
 	int hblank;
-	const struct ar0234_format *format = ar0234->mode.format;
+	const struct ar0234_mode *mode = ar0234->cur_mode;
 
 	/* Update limits and set FPS to default */
 	__v4l2_ctrl_modify_range(ar0234->vblank, AR0234_VBLANK_MIN,
-				 AR0234_FLL_MAX - format->height,
+				 AR0234_FLL_MAX - mode->height,
 				 ar0234->vblank->step, AR0234_VBLANK_MIN);
 
 	/* Setting this will adjust the exposure limits as well */
 	__v4l2_ctrl_s_ctrl(ar0234->vblank, AR0234_VBLANK_MIN);
 
-	hblank = AR0234_LINE_LENGTH_PCK_DEF - format->width;
+	hblank = AR0234_LINE_LENGTH_PCK_DEF - mode->width;
 	__v4l2_ctrl_modify_range(ar0234->hblank, hblank, hblank, 1, hblank);
 	__v4l2_ctrl_s_ctrl(ar0234->hblank, hblank);
 }
@@ -858,7 +854,7 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 				 struct v4l2_subdev_format *fmt)
 {
 	struct ar0234 *ar0234 = to_ar0234(sd);
-	struct ar0234_format const *format;
+	const struct ar0234_mode *mode;
 	struct v4l2_mbus_framefmt *framefmt;
 
 	if (fmt->pad >= NUM_PADS)
@@ -869,18 +865,19 @@ static int ar0234_set_pad_format(struct v4l2_subdev *sd,
 	if (fmt->pad == IMAGE_PAD) {
 		fmt->format.code = ar0234_get_format_code(ar0234);
 
-		format = v4l2_find_nearest_size(
-			ar0234_formats, ARRAY_SIZE(ar0234_formats), width,
-			height, fmt->format.width, fmt->format.height);
-		ar0234_update_image_pad_format(ar0234, format, fmt);
+		mode = v4l2_find_nearest_size(ar0234_modes,
+					      ARRAY_SIZE(ar0234_modes), width,
+					      height, fmt->format.width,
+					      fmt->format.height);
+		ar0234_update_image_pad_format(ar0234, mode, fmt);
 		if (fmt->which == V4L2_SUBDEV_FORMAT_TRY) {
 			framefmt = v4l2_subdev_state_get_format(sd_state,
 								fmt->pad);
 			*framefmt = fmt->format;
-		} else if (ar0234->mode.format != format ||
+		} else if (ar0234->cur_mode != mode ||
 			   ar0234->fmt.code != fmt->format.code) {
 			ar0234->fmt = fmt->format;
-			ar0234->mode.format = format;
+			ar0234->cur_mode = mode;
 			ar0234_set_framing_limits(ar0234);
 		}
 	} else {
@@ -907,7 +904,7 @@ __ar0234_get_pad_crop(struct ar0234 *ar0234, struct v4l2_subdev_state *sd_state,
 	case V4L2_SUBDEV_FORMAT_TRY:
 		return v4l2_subdev_state_get_crop(sd_state, pad);
 	case V4L2_SUBDEV_FORMAT_ACTIVE:
-		return &ar0234->mode.format->crop;
+		return &ar0234->cur_mode->crop;
 	}
 
 	return NULL;
@@ -988,13 +985,13 @@ static int ar0234_pixclk_config(struct ar0234 *ar0234)
 		ret = cci_write(ar0234->regmap, AR0234_REG_MFR_30BA,
 				AR0234_MFR_30BA_GAIN_BITS(6), &ret);
 
-		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
+		ar0234->mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
 	} else {
 		/* 
 		 * Default value after reset. No need to write to register.
 		 * Just update the cached value.
 		 */
-		ar0234->mode.mfr_30ba = AR0234_MFR_30BA_DEFAULT;
+		ar0234->mfr_30ba = AR0234_MFR_30BA_DEFAULT;
 	}
 
 	return ret;
@@ -1086,7 +1083,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 
 	/* Apply default values of current frame format */
 	ret = ar0234_reg_seq_write(ar0234->regmap,
-				   &ar0234->mode.format->reg_sequence);
+				   &ar0234->cur_mode->reg_sequence);
 	if (ret < 0) {
 		dev_err(&client->dev, "%s failed to set frame format\n",
 			__func__);
