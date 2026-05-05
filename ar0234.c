@@ -1025,17 +1025,17 @@ static int ar0234_stream_on(struct ar0234 *ar0234)
 
 static int ar0234_start_streaming(struct ar0234 *ar0234)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
+	struct device *dev = ar0234->dev;
 	int ret;
 
-	ret = pm_runtime_resume_and_get(&client->dev);
+	ret = pm_runtime_resume_and_get(dev);
 	if (ret < 0)
 		return ret;
 
 	/* Reset */
 	ret = ar0234_soft_reset(ar0234);
 	if (ret < 0) {
-		dev_err(ar0234->dev, "%s failed to reset\n", __func__);
+		dev_err(dev, "%s failed to reset\n", __func__);
 		return ret;
 	}
 
@@ -1043,8 +1043,8 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	ret = ar0234_reg_seq_write(ar0234->regmap,
 				   &ar0234->pll_config->regs_pll);
 	if (ret < 0) {
-		dev_err(ar0234->dev,
-			"%s failed to configure pll/mipi settings\n", __func__);
+		dev_err(dev, "%s failed to configure pll/mipi settings\n",
+			__func__);
 		return ret;
 	}
 
@@ -1052,8 +1052,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	ret = cci_write(ar0234->regmap, AR0234_REG_SERIAL_FORMAT,
 			(0x0200 | ar0234->hw_config.num_data_lanes), NULL);
 	if (ret < 0) {
-		dev_err(&client->dev, "%s failed to configure lane count\n",
-			__func__);
+		dev_err(dev, "%s failed to configure lane count\n", __func__);
 		return ret;
 	}
 
@@ -1061,16 +1060,14 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	ret = cci_multi_reg_write(ar0234->regmap, common_init,
 				  ARRAY_SIZE(common_init), NULL);
 	if (ret < 0) {
-		dev_err(&client->dev, "%s failed to set common settings\n",
-			__func__);
+		dev_err(dev, "%s failed to set common settings\n", __func__);
 		return ret;
 	}
 
 	/* Configure recommended pixclk settings */
 	ret = ar0234_pixclk_config(ar0234);
 	if (ret < 0) {
-		dev_err(&client->dev,
-			"%s failed to apply recommended pixclk settings\n",
+		dev_err(dev, "%s failed to apply recommended pixclk settings\n",
 			__func__);
 	}
 
@@ -1078,8 +1075,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	ret = ar0234_reg_seq_write(ar0234->regmap,
 				   &ar0234->cur_mode->reg_sequence);
 	if (ret < 0) {
-		dev_err(&client->dev, "%s failed to set frame format\n",
-			__func__);
+		dev_err(dev, "%s failed to set frame format\n", __func__);
 		return ret;
 	}
 
@@ -1091,7 +1087,7 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 		ret = cci_write(ar0234->regmap, AR0234_REG_LED_FLASH_CONTROL,
 				flash_val, NULL);
 		if (ret < 0) {
-			dev_err(&client->dev, "%s failed to configure flash\n",
+			dev_err(dev, "%s failed to configure flash\n",
 				__func__);
 			return ret;
 		}
@@ -1109,17 +1105,16 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 
 static void ar0234_stop_streaming(struct ar0234 *ar0234)
 {
-	struct i2c_client *client = v4l2_get_subdevdata(&ar0234->sd);
+	struct device *dev = ar0234->dev;
 	int ret;
 
 	ret = cci_write(ar0234->regmap, AR0234_REG_RESET, AR0234_RESET_DEFAULT,
 			NULL);
 	if (ret < 0)
-		dev_err(&client->dev, "%s failed to stop streaming\n",
-			__func__);
+		dev_err(dev, "%s failed to stop streaming\n", __func__);
 
-	pm_runtime_mark_last_busy(&client->dev);
-	pm_runtime_put_autosuspend(&client->dev);
+	pm_runtime_mark_last_busy(dev);
+	pm_runtime_put_autosuspend(dev);
 }
 
 static int ar0234_set_stream(struct v4l2_subdev *sd, int enable)
