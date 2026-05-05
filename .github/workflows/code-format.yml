@@ -26,3 +26,37 @@ jobs:
         uses: jidicula/clang-format-action@v4.16.0
         with:
           clang-format-version: '19'
+
+  checkpatch:
+    name: checkpatch
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout driver source
+        uses: actions/checkout@v6
+
+      - name: Checkout mainline kernel scripts
+        uses: actions/checkout@v6
+        with:
+          repository: torvalds/linux
+          ref: master
+          sparse-checkout: |
+            scripts/checkpatch.pl
+            scripts/spelling.txt
+            scripts/const_structs.checkpatch
+          sparse-checkout-cone-mode: false
+          path: linux
+          fetch-depth: 1
+
+      - name: Install codespell
+        run: sudo apt-get install -y codespell
+
+      - name: Run checkpatch
+        run: |
+          linux/scripts/checkpatch.pl \
+            --strict --no-tree -f \
+            --terse --show-types --color=never \
+            --max-line-length=100 \
+            --codespell \
+            *.c | tee /tmp/checkpatch.out
+          test ! -s /tmp/checkpatch.out
