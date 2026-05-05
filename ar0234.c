@@ -167,13 +167,6 @@ MODULE_PARM_DESC(trigger_mode,
 /* 1 format code for selected link frequency */
 #define AR0234_FMT_CODE_AMOUNT 1
 
-/* Helper macro for declaring ar0234 reg sequence */
-#define AR0234_REG_SEQ(_reg_array)                \
-	{                                         \
-		.regs = (_reg_array),             \
-		.amount = ARRAY_SIZE(_reg_array), \
-	}
-
 #define AR0234_SUPPLY_AMOUNT ARRAY_SIZE(ar0234_supply_names)
 
 enum pad_types {
@@ -183,7 +176,7 @@ enum pad_types {
 };
 
 struct ar0234_reg_sequence {
-	unsigned int amount;
+	unsigned int num_regs;
 	const struct cci_reg_sequence *regs;
 };
 
@@ -362,7 +355,10 @@ static const struct ar0234_format ar0234_formats[] = {
 			.width = 1920,
 			.height = 1200,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_1920x1200_config),
+		.reg_sequence = {
+			.regs = ar0234_1920x1200_config,
+			.num_regs = ARRAY_SIZE(ar0234_1920x1200_config),
+		},
 	},
 	{
 		.width = 1920,
@@ -373,7 +369,10 @@ static const struct ar0234_format ar0234_formats[] = {
 			.width = 1920,
 			.height = 1080,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_1080p_config),
+		.reg_sequence = {
+			.regs = ar0234_1080p_config,
+			.num_regs = ARRAY_SIZE(ar0234_1080p_config),
+		},
 	},
 	{
 		.width = 1280,
@@ -384,7 +383,10 @@ static const struct ar0234_format ar0234_formats[] = {
 			.width = 1280,
 			.height = 720,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_720p_config),
+		.reg_sequence = {
+			.regs = ar0234_720p_config,
+			.num_regs = ARRAY_SIZE(ar0234_720p_config),
+		},
 	},
 	{
 		.width = 960,
@@ -395,7 +397,10 @@ static const struct ar0234_format ar0234_formats[] = {
 			.width = 1920,
 			.height = 1200,
 		},
-		.reg_sequence = AR0234_REG_SEQ(ar0234_960x600_config),
+		.reg_sequence = {
+			.regs = ar0234_960x600_config,
+			.num_regs = ARRAY_SIZE(ar0234_960x600_config),
+		},
 	},
 };
 
@@ -415,7 +420,10 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 	{
 		.freq_link = AR0234_FREQ_LINK_8BIT,
 		.freq_extclk = AR0234_FREQ_EXTCLK,
-		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_360_8bit),
+		.regs_pll = {
+			.regs = ar0234_pll_config_24_360_8bit,
+			.num_regs = ARRAY_SIZE(ar0234_pll_config_24_360_8bit),
+		},
 		.fmt_codes = {
 			.bayer = MEDIA_BUS_FMT_SGRBG8_1X8,
 			.mono = MEDIA_BUS_FMT_Y8_1X8,
@@ -424,7 +432,10 @@ static const struct ar0234_pll_config ar0234_pll_configs[] = {
 	{
 		.freq_link = AR0234_FREQ_LINK_10BIT,
 		.freq_extclk = AR0234_FREQ_EXTCLK,
-		.regs_pll = AR0234_REG_SEQ(ar0234_pll_config_24_450_10bit),
+		.regs_pll = {
+			.regs = ar0234_pll_config_24_450_10bit,
+			.num_regs = ARRAY_SIZE(ar0234_pll_config_24_450_10bit),
+		},
 		.fmt_codes = {
 			.bayer = MEDIA_BUS_FMT_SGRBG10_1X10,
 			.mono = MEDIA_BUS_FMT_Y10_1X10,
@@ -956,7 +967,7 @@ ar0234_reg_seq_write(struct regmap *regmap,
 		     struct ar0234_reg_sequence const *reg_sequence)
 {
 	return cci_multi_reg_write(regmap, reg_sequence->regs,
-				   reg_sequence->amount, NULL);
+				   reg_sequence->num_regs, NULL);
 }
 
 static int ar0234_pixclk_config(struct ar0234 *ar0234)
