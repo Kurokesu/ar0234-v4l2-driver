@@ -482,10 +482,7 @@ struct ar0234 {
 	const struct ar0234_mode *cur_mode;
 	u16 mfr_30ba;
 
-	/*
-	* Mutex for serialized access:
-	* Protect sensor module set pad format and start/stop streaming safely.
-	*/
+	/* Protects pad format and streaming state */
 	struct mutex mutex;
 
 	/* Streaming on/off */
@@ -632,9 +629,9 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 		ar0234_adjust_exposure_range(ar0234);
 
 	/*
-	* Applying V4L2 control value only happens
-	* when power is up for streaming
-	*/
+	 * Applying V4L2 control value only happens
+	 * when power is up for streaming
+	 */
 	if (pm_runtime_get_if_in_use(&client->dev) == 0)
 		return 0;
 
@@ -985,7 +982,7 @@ static int ar0234_pixclk_config(struct ar0234 *ar0234)
 
 		ar0234->mfr_30ba = AR0234_MFR_30BA_GAIN_BITS(6);
 	} else {
-		/* 
+		/*
 		 * Default value after reset. No need to write to register.
 		 * Just update the cached value.
 		 */
@@ -1139,10 +1136,6 @@ static int ar0234_set_stream(struct v4l2_subdev *sd, int enable)
 	}
 
 	if (enable) {
-		/*
-		* Apply default & customized values
-		* and then start streaming.
-		*/
 		ret = ar0234_start_streaming(ar0234);
 		if (ret)
 			goto err_start_streaming;
@@ -1326,11 +1319,11 @@ static int ar0234_init_controls(struct ar0234 *ar0234)
 				     0, 0, ar0234_test_pattern_menu);
 	for (i = 0; i < 4; i++) {
 		/*
-		* The assumption is that
-		* V4L2_CID_TEST_PATTERN_GREENR == V4L2_CID_TEST_PATTERN_RED + 1
-		* V4L2_CID_TEST_PATTERN_BLUE   == V4L2_CID_TEST_PATTERN_RED + 2
-		* V4L2_CID_TEST_PATTERN_GREENB == V4L2_CID_TEST_PATTERN_RED + 3
-		*/
+		 * The assumption is that
+		 * V4L2_CID_TEST_PATTERN_GREENR == V4L2_CID_TEST_PATTERN_RED + 1
+		 * V4L2_CID_TEST_PATTERN_BLUE   == V4L2_CID_TEST_PATTERN_RED + 2
+		 * V4L2_CID_TEST_PATTERN_GREENB == V4L2_CID_TEST_PATTERN_RED + 3
+		 */
 		v4l2_ctrl_new_std(ctrl_hdlr, &ar0234_ctrl_ops,
 				  V4L2_CID_TEST_PATTERN_RED + i,
 				  AR0234_TEST_PATTERN_COLOR_MIN,
@@ -1551,10 +1544,11 @@ static int ar0234_probe(struct i2c_client *client)
 	if (ret)
 		goto error_power_off;
 
-	/* sensor doesn't enter LP-11 state upon power up until and unless
-	* streaming is started, so upon power up switch the modes to:
-	* streaming -> standby
-	*/
+	/*
+	 * Sensor doesn't enter LP-11 state upon power up until and unless
+	 * streaming is started, so upon power up switch the modes to:
+	 * streaming -> standby
+	 */
 	ret = ar0234_mode_select(ar0234, true);
 	if (ret < 0)
 		goto error_power_off;
