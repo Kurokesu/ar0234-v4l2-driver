@@ -1029,8 +1029,9 @@ static int ar0234_start_streaming(struct ar0234 *ar0234)
 	int ret;
 
 	ret = pm_runtime_resume_and_get(dev);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	/* Reset */
 	ret = ar0234_soft_reset(ar0234);
