@@ -498,11 +498,10 @@ static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 {
 	u32 code;
 
-	if (ar0234->monochrome) {
+	if (ar0234->monochrome)
 		code = ar0234->pll_config->fmt_codes.mono;
-	} else {
+	else
 		code = ar0234->pll_config->fmt_codes.bayer;
-	}
 
 	return code;
 }
@@ -582,19 +581,17 @@ static int ar0234_set_analog_gain(struct ar0234 *ar0234, u8 analog_gain)
 	 */
 	if (ar0234_freq_pixclk[ar0234->hw_config.lane_count_id] ==
 	    AR0234_FREQ_PIXCLK_45MHZ) {
-		if (analog_gain < 0x36) {
+		if (analog_gain < 0x36)
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(6);
-		} else {
+		else
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
-		}
 	} else {
-		if (analog_gain < 0x20) {
+		if (analog_gain < 0x20)
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(2);
-		} else if (analog_gain < 0x3A) {
+		else if (analog_gain < 0x3A)
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(1);
-		} else {
+		else
 			mfr_30ba_val = AR0234_MFR_30BA_GAIN_BITS(0);
-		}
 	}
 
 	/* Use grouped parameter hold when 0x30BA needs to be updated. */
