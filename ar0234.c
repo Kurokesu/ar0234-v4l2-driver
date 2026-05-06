@@ -509,21 +509,19 @@ static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 
 static void ar0234_set_default_format(struct ar0234 *ar0234)
 {
-	struct v4l2_mbus_framefmt *fmt;
+	struct v4l2_mbus_framefmt *fmt = &ar0234->fmt;
 
-	fmt = &ar0234->fmt;
+	ar0234->cur_mode = &ar0234_modes[0];
+
 	fmt->code = ar0234_get_format_code(ar0234);
-
-	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+	fmt->colorspace = V4L2_COLORSPACE_RAW;
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, fmt->colorspace,
 							  fmt->ycbcr_enc);
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
-	fmt->width = ar0234_modes[0].width;
-	fmt->height = ar0234_modes[0].height;
+	fmt->width = ar0234->cur_mode->width;
+	fmt->height = ar0234->cur_mode->height;
 	fmt->field = V4L2_FIELD_NONE;
-
-	ar0234->cur_mode = &ar0234_modes[0];
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -757,7 +755,7 @@ static int ar0234_enum_frame_size(struct v4l2_subdev *sd,
 
 static void ar0234_reset_colorspace(struct v4l2_mbus_framefmt *fmt)
 {
-	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+	fmt->colorspace = V4L2_COLORSPACE_RAW;
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, fmt->colorspace,
 							  fmt->ycbcr_enc);
