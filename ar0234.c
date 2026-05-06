@@ -79,12 +79,13 @@ MODULE_PARM_DESC(trigger_mode,
 #define AR0234_REG_MIPI_TIMING_4 CCI_REG16(0x31BC)
 #define AR0234_REG_COMPANDING CCI_REG16(0x31D0)
 #define AR0234_REG_PIX_DEF_ID CCI_REG16(0x31E0)
+#define AR0234_REG_CUSTOMER_REV CCI_REG16(0x31FE)
 #define AR0234_REG_LED_FLASH_CONTROL CCI_REG16(0x3270)
 #define AR0234_REG_MIPI_CNTRL CCI_REG16(0x3354)
 
-/* Chip ID */
+/* Chip ID and sensor type */
 #define AR0234_CHIP_ID 0x0A56
-#define AR0234_CHIP_ID_MONO 0x1A56
+#define AR0234_CUSTOMER_REV_CFA_MONO BIT(5)
 
 /* Sensor frequencies */
 #define AR0234_FREQ_EXTCLK 24000000
@@ -470,7 +471,7 @@ struct ar0234 {
 
 	struct v4l2_mbus_framefmt fmt;
 
-	bool monochrome;
+	bool mono;
 
 	struct v4l2_ctrl_handler ctrl_handler;
 	/* V4L2 Controls */
@@ -499,7 +500,7 @@ static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 {
 	u32 code;
 
-	if (ar0234->monochrome)
+	if (ar0234->mono)
 		code = ar0234->pll_config->fmt_codes.mono;
 	else
 		code = ar0234->pll_config->fmt_codes.bayer;
@@ -509,21 +510,19 @@ static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 
 static void ar0234_set_default_format(struct ar0234 *ar0234)
 {
-	struct v4l2_mbus_framefmt *fmt;
+	struct v4l2_mbus_framefmt *fmt = &ar0234->fmt;
 
-	fmt = &ar0234->fmt;
+	ar0234->cur_mode = &ar0234_modes[0];
+
 	fmt->code = ar0234_get_format_code(ar0234);
-
-	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+	fmt->colorspace = V4L2_COLORSPACE_RAW;
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, fmt->colorspace,
 							  fmt->ycbcr_enc);
 	fmt->xfer_func = V4L2_MAP_XFER_FUNC_DEFAULT(fmt->colorspace);
-	fmt->width = ar0234_modes[0].width;
-	fmt->height = ar0234_modes[0].height;
+	fmt->width = ar0234->cur_mode->width;
+	fmt->height = ar0234->cur_mode->height;
 	fmt->field = V4L2_FIELD_NONE;
-
-	ar0234->cur_mode = &ar0234_modes[0];
 }
 
 static int ar0234_open(struct v4l2_subdev *sd, struct v4l2_subdev_fh *fh)
@@ -757,7 +756,7 @@ static int ar0234_enum_frame_size(struct v4l2_subdev *sd,
 
 static void ar0234_reset_colorspace(struct v4l2_mbus_framefmt *fmt)
 {
-	fmt->colorspace = V4L2_COLORSPACE_SRGB;
+	fmt->colorspace = V4L2_COLORSPACE_RAW;
 	fmt->ycbcr_enc = V4L2_MAP_YCBCR_ENC_DEFAULT(fmt->colorspace);
 	fmt->quantization = V4L2_MAP_QUANTIZATION_DEFAULT(true, fmt->colorspace,
 							  fmt->ycbcr_enc);
@@ -1198,24 +1197,28 @@ static int ar0234_power_off(struct device *dev)
 	return 0;
 }
 
-/* Verify chip ID */
 static int ar0234_identify_module(struct ar0234 *ar0234)
 {
-	int ret;
+	struct device *dev = ar0234->dev;
 	u64 reg_val;
+	int ret;
 
 	ret = cci_read(ar0234->regmap, AR0234_REG_CHIP_ID, &reg_val, NULL);
-	if (ret < 0)
-		return dev_err_probe(ar0234->dev, ret,
-				     "failed to read chip id\n");
+	if (ret)
+		return dev_err_probe(dev, ret, "failed to read chip id\n");
 
-	if (reg_val == AR0234_CHIP_ID_MONO)
-		ar0234->monochrome = true;
-	else if (reg_val != AR0234_CHIP_ID)
-		return dev_err_probe(ar0234->dev, -EIO,
-				     "Invalid chip id: 0x%x\n", (u16)reg_val);
+	if ((u16)reg_val != AR0234_CHIP_ID)
+		return dev_err_probe(dev, -EIO, "unknown chip id: 0x%x\n",
+				     (u16)reg_val);
 
-	dev_info(ar0234->dev, "Success reading chip id: 0x%x\n", (u16)reg_val);
+	ret = cci_read(ar0234->regmap, AR0234_REG_CUSTOMER_REV, &reg_val, NULL);
+	if (ret)
+		return dev_err_probe(dev, ret, "failed to read customer rev\n");
+
+	ar0234->mono = reg_val & AR0234_CUSTOMER_REV_CFA_MONO;
+
+	dev_info(dev, "chip id: 0x%x, type: %s\n", AR0234_CHIP_ID,
+		 ar0234->mono ? "mono" : "color");
 
 	return ret;
 }
