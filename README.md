@@ -8,6 +8,7 @@
 
 Raspberry Pi kernel driver for Onsemi AR0234, a 2.3 MP global shutter 1/2.6" CMOS sensor.
 
+- Color and monochrome sensor support
 - 2-lane and 4-lane MIPI CSI-2 (up to 900 Mbps/lane)
 - 8-bit and 10-bit RAW output
 - 1920×1200 @ 120 fps (full resolution)
