@@ -471,7 +471,7 @@ struct ar0234 {
 
 	struct v4l2_mbus_framefmt fmt;
 
-	bool monochrome;
+	bool mono;
 
 	struct v4l2_ctrl_handler ctrl_handler;
 	/* V4L2 Controls */
@@ -500,7 +500,7 @@ static u32 ar0234_get_format_code(struct ar0234 *ar0234)
 {
 	u32 code;
 
-	if (ar0234->monochrome)
+	if (ar0234->mono)
 		code = ar0234->pll_config->fmt_codes.mono;
 	else
 		code = ar0234->pll_config->fmt_codes.bayer;
@@ -1215,10 +1215,10 @@ static int ar0234_identify_module(struct ar0234 *ar0234)
 	if (ret)
 		return dev_err_probe(dev, ret, "failed to read customer rev\n");
 
-	ar0234->monochrome = reg_val & AR0234_CUSTOMER_REV_CFA_MONO;
+	ar0234->mono = reg_val & AR0234_CUSTOMER_REV_CFA_MONO;
 
 	dev_info(dev, "chip id: 0x%x, type: %s\n", AR0234_CHIP_ID,
-		 ar0234->monochrome ? "mono" : "color");
+		 ar0234->mono ? "mono" : "color");
 
 	return ret;
 }
