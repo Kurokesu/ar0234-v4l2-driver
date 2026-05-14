@@ -7,7 +7,7 @@ SRC_DIR   := $(shell pwd)
 BUILD_DIR := build
 
 DRV_SRC   := $(wildcard *.c)
-DRV_NAME  := $(basename $(DRV_SRC))
+DRV_NAME  := $(shell grep '^BUILT_MODULE_NAME=' dkms.conf | cut -d'"' -f2)
 DTS       := $(wildcard *-overlay.dts)
 DTBO      := $(DRV_NAME).dtbo
 DTC       := dtc
