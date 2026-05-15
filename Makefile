@@ -23,6 +23,10 @@ ifeq ($(DRV_SRC),)
   $(error No .c source file found in project root)
 endif
 
+ifeq ($(DRV_NAME),)
+  $(error No BUILT_MODULE_NAME found in dkms.conf)
+endif
+
 ifeq ($(DTS),)
   $(error No *-overlay.dts file found in project root)
 endif
