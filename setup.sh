@@ -8,6 +8,9 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Status line formatter (matches Makefile's PRINT)
+print() { printf '  %-7s %s\n' "$1" "$2"; }
+
 PACKAGE_NAME=$(grep '^PACKAGE_NAME=' "$SCRIPT_DIR/dkms.conf" | cut -d'"' -f2)
 VERSION=$(grep '^PACKAGE_VERSION=' "$SCRIPT_DIR/dkms.conf" | cut -d'"' -f2)
 
@@ -25,11 +28,11 @@ fi
 
 OLD_VER=$(dkms status -m "$PACKAGE_NAME" 2>/dev/null | cut -d'/' -f2 | cut -d',' -f1)
 if [ -n "$OLD_VER" ]; then
-    echo "Removing previous DKMS registration: ${PACKAGE_NAME}/${OLD_VER}"
+    print DKMS "remove ${PACKAGE_NAME}/${OLD_VER} (previous)"
     sudo dkms remove "${PACKAGE_NAME}/${OLD_VER}" --all || true
 fi
 
-echo "Copying driver source to ${DKMS_SRC}"
+print COPY "driver source -> $DKMS_SRC"
 sudo rm -rf "$DKMS_SRC"
 sudo mkdir -p "$DKMS_SRC"
 sudo cp "$SCRIPT_DIR/dkms.conf" "$DKMS_SRC/"
@@ -38,13 +41,13 @@ sudo cp "$SCRIPT_DIR/Makefile" "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR"/*.c "$DKMS_SRC/"
 sudo cp "$SCRIPT_DIR"/*.dts "$DKMS_SRC/"
 
-echo "DKMS: adding ${PACKAGE_NAME}/${VERSION}"
+print DKMS "add ${PACKAGE_NAME}/${VERSION}"
 sudo dkms add -m "$PACKAGE_NAME" -v "$VERSION"
 
-echo "DKMS: building ${PACKAGE_NAME}/${VERSION}"
+print DKMS "build ${PACKAGE_NAME}/${VERSION}"
 sudo dkms build -m "$PACKAGE_NAME" -v "$VERSION"
 
-echo "DKMS: installing ${PACKAGE_NAME}/${VERSION}"
+print DKMS "install ${PACKAGE_NAME}/${VERSION}"
 sudo dkms install -m "$PACKAGE_NAME" -v "$VERSION"
 
 echo ""

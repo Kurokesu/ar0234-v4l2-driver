@@ -1,5 +1,10 @@
 #!/bin/sh
 
+# Status line formatter (matches Makefile's PRINT)
+print() { printf '  %-7s %s\n' "$1" "$2"; }
+
 cd "$(dirname "$0")"
 make dtbo
+
+print INSTALL "/boot/overlays/$(basename build/*.dtbo)"
 install -m 644 build/*.dtbo /boot/overlays/

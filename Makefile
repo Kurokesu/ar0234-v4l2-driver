@@ -16,6 +16,9 @@ DTC_FLAGS := -Wno-interrupts_property -Wno-unit_address_vs_reg -@ -I dts -O dtb
 KDIR      ?= /lib/modules/$(shell uname -r)/build
 CCFLAGS   := -Werror
 
+# Status line formatter (8-char tag column, arg at col 11)
+PRINT = printf '  %-7s %s\n'
+
 ifeq ($(DRV_SRC),)
   $(error No .c source file found in project root)
 endif
@@ -35,7 +38,9 @@ dtbo: $(BUILD_DIR)/$(DTBO)
 module: $(BUILD_DIR)/$(DRV_NAME).ko
 
 $(BUILD_DIR)/$(DTBO): $(DTS) | $(BUILD_DIR)
-	$(DTC) $(DTC_FLAGS) -o $@ $<
+	@$(PRINT) DTC $@
+	@$(DTC) $(DTC_FLAGS) -o $@ $<
+	@$(PRINT) BUILT $@
 
 $(BUILD_DIR)/Kbuild: | $(BUILD_DIR)
 	@echo "ccflags-y += $(CCFLAGS)" > $@
@@ -43,13 +48,18 @@ $(BUILD_DIR)/Kbuild: | $(BUILD_DIR)
 	@ln -sf $(SRC_DIR)/$(DRV_SRC) $(BUILD_DIR)/$(DRV_SRC)
 
 $(BUILD_DIR)/$(DRV_NAME).o: $(DRV_SRC) $(BUILD_DIR)/Kbuild
-	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) $(DRV_NAME).o
+	@$(PRINT) KBUILD $(DRV_NAME).o
+	@$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) $(DRV_NAME).o
+	@$(PRINT) BUILT $@
 
 $(BUILD_DIR)/$(DRV_NAME).ko: $(DRV_SRC) $(BUILD_DIR)/Kbuild
-	$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) modules
+	@$(PRINT) KBUILD $(DRV_NAME).ko
+	@$(MAKE) -C $(KDIR) M=$(SRC_DIR)/$(BUILD_DIR) modules
+	@$(PRINT) BUILT $@
 
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
 clean:
-	rm -rf $(BUILD_DIR)
+	@$(PRINT) CLEAN $(BUILD_DIR)
+	@rm -rf $(BUILD_DIR)
