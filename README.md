@@ -69,7 +69,7 @@ Save and exit. Reboot for changes to take effect.
 `ar0234` overlay supports comma-separated options to override defaults:
 
 | option | description | default |
-|--------|-------------|----------|
+|--------|-------------|---------|
 | [`cam0`](#cam0) | Use cam0 port instead of cam1 | cam1 |
 | [`4lane`](#4lane) | Use 4-lane MIPI CSI-2 (if wired) | 2 lanes |
 | [`link-frequency=<Hz>`](#link-frequency) | Set MIPI CSI-2 link frequency (Hz) | 450000000 |
