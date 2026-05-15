@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # SPDX-License-Identifier: GPL-2.0
 # Copyright (c) 2026, UAB Kurokesu. All rights reserved.
 #
@@ -15,40 +15,40 @@ PACKAGE_NAME=$(grep '^PACKAGE_NAME=' "$SCRIPT_DIR/dkms.conf" | cut -d'"' -f2)
 VERSION=$(grep '^PACKAGE_VERSION=' "$SCRIPT_DIR/dkms.conf" | cut -d'"' -f2)
 
 if [ -z "$PACKAGE_NAME" ] || [ -z "$VERSION" ]; then
-    echo "Error: Failed to read PACKAGE_NAME or PACKAGE_VERSION from dkms.conf"
-    exit 1
+	echo "Error: Failed to read PACKAGE_NAME or PACKAGE_VERSION from dkms.conf"
+	exit 1
 fi
 
 DKMS_SRC="/usr/src/${PACKAGE_NAME}-${VERSION}"
 
-if ! command -v dkms &>/dev/null; then
-    echo "Error: dkms is not installed. Install it with: sudo apt install -y --no-install-recommends dkms"
-    exit 1
+if ! command -v dkms >/dev/null 2>&1; then
+	echo "Error: dkms is not installed. Install it with: sudo apt install -y --no-install-recommends dkms"
+	exit 1
 fi
 
 OLD_VER=$(dkms status -m "$PACKAGE_NAME" 2>/dev/null | cut -d'/' -f2 | cut -d',' -f1)
 if [ -n "$OLD_VER" ]; then
-    print DKMS "remove ${PACKAGE_NAME}/${OLD_VER} (previous)"
-    sudo dkms remove "${PACKAGE_NAME}/${OLD_VER}" --all || true
+	print DKMS "remove ${PACKAGE_NAME}/${OLD_VER} (previous)"
+	dkms remove "${PACKAGE_NAME}/${OLD_VER}" --all || true
 fi
 
 print COPY "driver source -> $DKMS_SRC"
-sudo rm -rf "$DKMS_SRC"
-sudo mkdir -p "$DKMS_SRC"
-sudo cp "$SCRIPT_DIR/dkms.conf" "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR/dkms.postinst" "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR/Makefile" "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR"/*.c "$DKMS_SRC/"
-sudo cp "$SCRIPT_DIR"/*.dts "$DKMS_SRC/"
+rm -rf "$DKMS_SRC"
+mkdir -p "$DKMS_SRC"
+cp "$SCRIPT_DIR/dkms.conf" "$DKMS_SRC/"
+cp "$SCRIPT_DIR/dkms.postinst" "$DKMS_SRC/"
+cp "$SCRIPT_DIR/Makefile" "$DKMS_SRC/"
+cp "$SCRIPT_DIR"/*.c "$DKMS_SRC/"
+cp "$SCRIPT_DIR"/*.dts "$DKMS_SRC/"
 
 print DKMS "add ${PACKAGE_NAME}/${VERSION}"
-sudo dkms add -m "$PACKAGE_NAME" -v "$VERSION"
+dkms add -m "$PACKAGE_NAME" -v "$VERSION"
 
 print DKMS "build ${PACKAGE_NAME}/${VERSION}"
-sudo dkms build -m "$PACKAGE_NAME" -v "$VERSION"
+dkms build -m "$PACKAGE_NAME" -v "$VERSION"
 
 print DKMS "install ${PACKAGE_NAME}/${VERSION}"
-sudo dkms install -m "$PACKAGE_NAME" -v "$VERSION"
+dkms install -m "$PACKAGE_NAME" -v "$VERSION"
 
 echo ""
 echo "Done."
