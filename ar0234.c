@@ -635,9 +635,11 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 
 	switch (ctrl->id) {
 	case V4L2_CID_ANALOGUE_GAIN:
+		dev_info(&client->dev, "set analog gain: %d\n", ctrl->val);
 		ret = ar0234_set_analog_gain(ar0234, ctrl->val);
 		break;
 	case V4L2_CID_EXPOSURE:
+		dev_info(&client->dev, "set exposure: %d\n", ctrl->val);
 		ret = cci_write(ar0234->regmap, AR0234_REG_EXPOSURE_COARSE,
 				ctrl->val, NULL);
 		break;
@@ -672,6 +674,7 @@ static int ar0234_set_ctrl(struct v4l2_ctrl *ctrl)
 				NULL);
 		break;
 	case V4L2_CID_VBLANK:
+		dev_info(&client->dev, "set vblank: %d\n", ctrl->val);
 		ret = cci_write(ar0234->regmap, AR0234_REG_FRAME_LENGTH_LINES,
 				ar0234->cur_mode->height + ctrl->val -
 					AR0234_FLL_OVERHEAD,
